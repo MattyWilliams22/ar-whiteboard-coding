@@ -1,7 +1,9 @@
 import cv2
 import cv2.aruco as aruco
 import numpy as np
-from pytesseract import pytesseract
+from paddleocr import PaddleOCR
+
+ocr = PaddleOCR(use_angle_cls=False, lang='en')
 
 # Function to map ArUco IDs to text
 def aruco_map(index):
@@ -53,44 +55,80 @@ def draw_keywords(image, bboxs, ids):
 
     return image
 
+def create_aruco_mask(image, bboxs, ids, buffer=10):
+    mask = np.zeros(image.shape[:2], dtype=np.uint8)  # Create a blank mask of the same size as the image
+
+    if bboxs is None:
+        return mask
+
+    for i in range(len(bboxs)):
+        box = bboxs[i][0]
+
+        # Convert box points to integers
+        box = np.int32(box)
+
+        # Create a bounding rectangle around the marker (with buffer)
+        x_min = min(box[:, 0]) - buffer
+        x_max = max(box[:, 0]) + buffer
+        y_min = min(box[:, 1]) - buffer
+        y_max = max(box[:, 1]) + buffer
+
+        # Ensure the coordinates are within the image bounds
+        x_min = max(0, x_min)
+        x_max = min(image.shape[1], x_max)
+        y_min = max(0, y_min)
+        y_max = min(image.shape[0], y_max)
+
+        # Fill the region in the mask
+        mask[y_min:y_max, x_min:x_max] = 255
+
+    return mask
+
 # ArUco marker detection function
 def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+    # Define the ArUco dictionary
     key = getattr(aruco, f'DICT_{6}X{6}_{250}')
     aruco_dict = cv2.aruco.getPredefinedDictionary(key)
     aruco_params = cv2.aruco.DetectorParameters()
 
+    # Detect markers
     corners, ids, _ = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
 
+    # If markers are detected, draw them on the image and return the bboxs and ids
     if ids is not None:
         aruco.drawDetectedMarkers(image, corners, ids)
         image = draw_keywords(image, corners, ids)
-    return image
 
-# Function to detect handwritten text
-def detect_handwritten_text(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # Return both the modified image and the bounding boxes (bboxs) and ids
+    return image, corners, ids
 
-    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    for contour in contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        if w < 20 or h < 20:  # Filter out small noise
-            continue
+# Function to detect handwritten text using a text detection model
+def detect_handwritten_text(image, aruco_mask):
+    # Convert image to RGB (PaddleOCR expects RGB format)
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # Draw bounding box
-        cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 0), 2)
+    # Apply the ArUco mask: Set the regions with ArUco markers to black
+    masked_image = cv2.bitwise_and(rgb_image, rgb_image, mask=~aruco_mask)
 
-        # Extract text using OCR
-        roi = gray[y:y + h, x:x + w]
+    # Perform OCR detection and recognition on the masked image
+    results = ocr.ocr(masked_image, cls=True)
 
-        path_to_tesseract = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-        pytesseract.tesseract_cmd = path_to_tesseract
+    # Draw bounding boxes and text on the image
+    for line in results[0]:
+        box, text = line  # Unpack the bounding box and text (no confidence in this version)
+        
+        startX, startY = int(box[0][0]), int(box[0][1])
+        endX, endY = int(box[2][0]), int(box[2][1])
 
-        text = pytesseract.image_to_string(roi, config='--psm 6')
-        cv2.putText(image, text.strip(), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+        # Draw rectangle around detected text
+        cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+
+        # Put recognized text above the rectangle
+        cv2.putText(image, f"{text}", (startX, startY - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+
     return image
 
 # Main function to process an image
@@ -100,11 +138,14 @@ def process_image(image_path):
         print(f"Error: Unable to load image at {image_path}")
         return
 
-    # Detect ArUco markers
-    image = detect_aruco_markers(image)
+    # Detect ArUco markers and get the bounding boxes, IDs, and processed image
+    image, bboxs, ids = detect_aruco_markers(image)
 
-    # Detect handwritten text
-    image = detect_handwritten_text(image)
+    # Create the ArUco mask to ignore marker regions during text detection
+    aruco_mask = create_aruco_mask(image, bboxs, ids)
+
+    # Detect handwritten text while ignoring ArUco marker regions
+    image = detect_handwritten_text(image, aruco_mask)
 
     # Resize the window to fit on screen and make it adjustable
     screen_width = 800
@@ -124,7 +165,6 @@ def process_image(image_path):
     cv2.resizeWindow('ArUco and Text Detection', screen_width, screen_height)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
 
 # Example usage
 process_image('sample_images/Mixed.jpg')
