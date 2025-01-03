@@ -9,8 +9,6 @@ ocr = PaddleOCR(use_angle_cls=False, lang='en')
 # Function to map ArUco IDs to text
 def aruco_map(index):
     match index:
-        case 0:
-            return "PRINT"
         case 203:
             return "IF"
         case 23:
@@ -20,10 +18,10 @@ def aruco_map(index):
         case 62:
             return "WHILE"
         case 40:
-            return "FUNCTION"
+            return "PRINT"
         case 98:
             return "RETURN"
-        case default:
+        case _:
             return "UNKNOWN"
 
 # Function to create a mask for ArUco markers
@@ -178,4 +176,4 @@ def process_image(image_path):
     cv2.destroyAllWindows()
 
 # Example usage
-process_image('sample_images/Mixed.jpg')
+process_image('sample_images/Prints.png')
