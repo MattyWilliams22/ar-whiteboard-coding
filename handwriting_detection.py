@@ -96,7 +96,7 @@ def detect_handwritten_text(image, aruco_mask):
         cv2.putText(image, f"{text}", (startX, startY - 10), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
-    return image
+    return image, results
 
 # Function to draw ArUco-associated keywords on the image after both stages of detection
 def draw_aruco_keywords(image, bboxs, ids):
@@ -151,7 +151,7 @@ def process_image(image_path):
     aruco_mask = create_aruco_mask(image, bboxs, ids, buffer=10)
 
     # Detect handwritten text
-    image = detect_handwritten_text(image, aruco_mask)
+    image, _ = detect_handwritten_text(image, aruco_mask)
 
     # Draw ArUco-associated keywords on the image after both detections
     image = draw_aruco_keywords(image, bboxs, ids)
