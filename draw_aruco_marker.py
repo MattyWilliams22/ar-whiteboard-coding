@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+MARKER_TYPE = cv2.aruco.DICT_4X4_50
+
 # Function to generate and display an ArUco marker for a given ID
 def show_aruco_marker(marker_id, dictionary=cv2.aruco.DICT_6X6_250):
     # Define the ArUco dictionary (you can change the dictionary type if needed)
@@ -15,7 +17,15 @@ def show_aruco_marker(marker_id, dictionary=cv2.aruco.DICT_6X6_250):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+    return marker_image
+
 # Example usage
 if __name__ == "__main__":
-    marker_id = int(input("Enter the ArUco marker ID: "))  # Get the marker ID from the user
-    show_aruco_marker(marker_id)
+    while True:
+        marker_id = input("Enter the ArUco marker ID: ")  # Get the marker ID from the user
+
+        if marker_id == "":
+            break
+
+        marker_image = show_aruco_marker(int(marker_id), MARKER_TYPE)
+        cv2.imwrite(f"aruco_marker_{marker_id}.png", marker_image)  # Save the marker image to a file
