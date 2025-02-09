@@ -1,8 +1,11 @@
 import cv2
-import cv2.aruco as aruco
 from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask, draw_aruco_keywords
-from code_detection.ocr.paddleocr import detect_paddleocr_text
-from code_detection.assemble_code import assemble_code
+from code_detection.ocr.paddle_ocr import detect_paddleocr_text
+# from code_detection.ocr.easy_ocr import detect_easyocr_text
+# from code_detection.ocr.py_tesseract import detect_pytesseract_text
+# from code_detection.ocr.kerasocr import detect_kerasocr_text
+# from code_detection.ocr.trocr import detect_trocr_text
+# from code_detection.assemble_code import assemble_code
 
 def detect_markers(marker_type: str, image):
     match marker_type:
@@ -30,6 +33,14 @@ def detect_text(ocr_type: str, image, mask):
     match ocr_type:
         case "paddleocr":
             return detect_paddleocr_text(image, mask)
+        # case "easyocr":
+        #     return detect_easyocr_text(image, mask)
+        # case "pytesseract":
+        #     return detect_pytesseract_text(image, mask)
+        # case "kerasocr":
+        #     return detect_kerasocr_text(image, mask)
+        # case "trocr":
+        #     return detect_trocr_text(image, mask)
         case _:
             return None, None
         

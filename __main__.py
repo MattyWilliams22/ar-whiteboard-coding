@@ -22,7 +22,7 @@ def get_input(input_type: str):
         cap.release()
         return image
 
-if __name__ == "__main__":
+def main():
     image = get_input(INPUT_TYPE)
 
     if image is None:
@@ -46,4 +46,7 @@ if __name__ == "__main__":
         exit()
 
     output(OUTPUT_TYPE, image, code)
+
+if __name__ == "__main__":
+    main()
 

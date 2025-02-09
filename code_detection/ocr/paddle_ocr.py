@@ -32,3 +32,8 @@ def detect_paddleocr_text(image, aruco_mask):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
     return image, results
+
+def test_detection(image):
+    result = ocr.ocr(image, cls=True)
+    detected_text = ' '.join([line[1] for line in result[0]])  # Join recognized text
+    return detected_text

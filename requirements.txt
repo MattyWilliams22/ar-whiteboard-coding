@@ -1,0 +1,33 @@
+# Core Python Libraries
+numpy==1.26.4
+opencv-python
+pillow
+scikit-learn
+editdistance
+
+# OCR Libraries
+# paddleocr
+# easyocr
+pytesseract
+keras-ocr
+torch
+torchvision
+torchaudio
+transformers
+
+# PaddleOCR Dependencies
+# paddlepaddle
+
+# EasyOCR Dependencies
+# shapely
+# python-bidi
+
+# Keras-OCR Dependencies
+tensorflow
+h5py
+
+# TrOCR (Hugging Face Transformer-based OCR)
+sentencepiece
+
+opencv-python
+setuptools

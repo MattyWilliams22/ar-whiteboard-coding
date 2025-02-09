@@ -1,5 +1,10 @@
 venv
+new_venv
+keras_env
+paddle_env
+easy_env
 __pycache__
 output.jpg
 output.txt
 aruco_marker_images
+dataset
