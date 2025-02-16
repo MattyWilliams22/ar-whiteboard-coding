@@ -9,7 +9,7 @@ PREPROCESSING_STEPS = []
 MARKER_TYPE = "aruco6x6_250"
 OCR_TYPE = "paddleocr"
 
-OUTPUT_TYPE = "console"
+OUTPUT_TYPE = "window"
 
 def get_input(input_type: str):
     if input_type == "file":
@@ -21,8 +21,8 @@ def get_input(input_type: str):
         _, image = cap.read()
         cap.release()
         return image
-
-if __name__ == "__main__":
+    
+def main():
     image = get_input(INPUT_TYPE)
 
     if image is None:
@@ -46,4 +46,7 @@ if __name__ == "__main__":
         exit()
 
     output(OUTPUT_TYPE, image, code)
+
+if __name__ == "__main__":
+    main()
 
