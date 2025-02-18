@@ -10,23 +10,38 @@ def capture_images(save_directory):
         print("Error: Could not open webcam.")
         return
 
+    # Set the webcam to its full resolution (modify values based on your webcam's specs)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)  # Adjust width
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)  # Adjust height
+
     try:
         while True:
-            distance = input("Enter distance (or type 'exit' to quit): ")
+            distance = input("Enter main distance (or type 'exit' to quit): ")
             if distance.lower() == 'exit':
                 break
 
-            angle = input("Enter angle: ")
-            filename = f"image_{distance}m_{angle}deg.jpg"
+            offset = input("Enter offset distance: ")
+            filename = f"image_{distance}m_offset_{offset}m.jpg"
             filepath = os.path.join(save_directory, filename)
 
-            ret, frame = cap.read()
-            if not ret:
-                print("Error: Failed to capture image.")
-                continue
+            print("Press SPACE to capture the image, or 'q' to quit.")
 
-            cv2.imwrite(filepath, frame)
-            print(f"Image saved as {filename}")
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    print("Error: Failed to capture frame.")
+                    break
+
+                # Show the webcam feed
+                cv2.imshow("Webcam Preview", frame)
+
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord(' '):  # Spacebar to capture
+                    cv2.imwrite(filepath, frame)
+                    print(f"Image saved as {filename}")
+                    break
+                elif key == ord('q'):  # 'q' to quit
+                    return
     
     finally:
         cap.release()

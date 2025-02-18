@@ -6,7 +6,7 @@ INPUT_TYPE = "file"
 
 PREPROCESSING_STEPS = []
 
-MARKER_TYPE = "aruco6x6_250"
+MARKER_TYPE = "colour"
 OCR_TYPE = "paddleocr"
 
 OUTPUT_TYPE = "window"
