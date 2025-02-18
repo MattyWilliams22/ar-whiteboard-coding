@@ -6,8 +6,7 @@ from code_detection.markers.keywords import get_keyword
 # ArUco marker detection function
 def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    key = getattr(aruco, f'DICT_{6}X{6}_{250}')
-    aruco_dict = cv2.aruco.getPredefinedDictionary(key)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary)
     aruco_params = cv2.aruco.DetectorParameters()
     corners, ids, _ = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
     if ids is not None:
