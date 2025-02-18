@@ -7,10 +7,12 @@ RESULTS_FILE = "marker_results.txt"
 def detect_markers_in_directory(directory, marker_type):
     if not os.path.exists(directory):
         print(f"Error: Directory '{directory}' does not exist.")
-        return
+        
+        
+    results_path = os.path.join(directory, RESULTS_FILE)
 
     # Clear previous results file
-    with open(RESULTS_FILE, "w") as results_file:
+    with open(results_path, "w") as results_file:
         results_file.write("Marker Detection Results:\n")
 
     for filename in os.listdir(directory):
@@ -35,13 +37,13 @@ def detect_markers_in_directory(directory, marker_type):
             
             # Log results
             marker_count = len(bboxs) if bboxs is not None else 0
-            with open(RESULTS_FILE, "a") as results_file:
+            with open(results_path, "a") as results_file:
                 results_file.write(f"{filename}: {marker_count} / 10 markers detected\n")
             print(f"Processed {filename}: {marker_count} / 10 markers detected")
 
 def main():
     directory = input("Enter the directory containing images: ")
-    marker_type = "aruco6x6_250"  # Change as needed
+    marker_type = "aruco4x4_50"  # Change as needed
     detect_markers_in_directory(directory, marker_type)
 
 if __name__ == "__main__":

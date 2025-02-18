@@ -9,3 +9,5 @@ marker_results.txt
 apriltag.py
 images
 test_images
+rename_files.py
+image_converter.py
