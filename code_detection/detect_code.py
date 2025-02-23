@@ -3,7 +3,7 @@ import cv2.aruco as aruco
 from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask, draw_aruco_keywords
 from code_detection.markers.colours import detect_colored_rectangles, create_rectangle_mask, draw_rectangle_keywords
 from code_detection.ocr.paddleocr import detect_paddleocr_text
-from code_detection.assemble_code import assemble_code
+from code_detection.parse_code import assemble_code
 
 def detect_markers(marker_type: str, image):
     match marker_type:
