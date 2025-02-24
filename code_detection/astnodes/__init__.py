@@ -10,3 +10,6 @@ from .identifier import Identifier
 from .statement import Statement
 from .custom import CustomStatement
 from .if_stmt import IfStatement
+from .while_stmt import WhileStatement
+from .return_stmt import ReturnStatement
+from .for_stmt import ForStatement

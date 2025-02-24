@@ -19,7 +19,7 @@ class Program(Node):
     def python_print(self):
         program = ""
         for function in self.functions:
-            program += function.python_print() + "\n"
+            program += function.python_print() + "\n\n"
         for statement in self.statements:
             program += statement.python_print() + "\n"
         return program

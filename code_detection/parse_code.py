@@ -51,10 +51,10 @@ def parse_statement(tokens: deque):
         statement, tokens = parse_print(tokens, next_bounds)
     elif next == "If":
         statement, tokens = parse_if_statement(tokens, next_bounds)
-    # elif next == "Return":
-    #     statement, tokens = parse_return(tokens, next_bounds)
-    # elif next == "For":
-    #     statement, tokens = parse_for(tokens, next_bounds)
+    elif next == "Return":
+        statement, tokens = parse_return(tokens, next_bounds)
+    elif next == "For":
+        statement, tokens = parse_for(tokens, next_bounds)
     # elif next == "While":
     #     statement, tokens = parse_while(tokens, next_bounds)
     # elif next == "Call":
@@ -131,6 +131,30 @@ def parse_print(tokens: deque, print_bounds: List[Tuple[int, int]]):
     stmt = PrintStatement(new_bounds, expr)
 
     print("Parsed print statement ", stmt.python_print())
+    
+    return stmt, tokens
+
+def parse_return(tokens: deque, return_bounds: List[Tuple[int, int]]):
+    expr, expr_bounds = tokens.popleft()
+
+    next, next_bounds = tokens.popleft()
+
+    while next != "LineBreak" and not tokens.empty():
+        expr += " "
+        expr += next
+        expr_bounds = get_overall_bounds([expr_bounds, next_bounds])
+        next, next_bounds = tokens.popleft()
+
+    if next != "LineBreak":
+        raise Exception("Expected LineBreak")
+
+    expr = Expr(expr_bounds, expr)
+
+    new_bounds = get_overall_bounds([return_bounds, expr_bounds])
+
+    stmt = ReturnStatement(new_bounds, expr)
+
+    print("Parsed return statement ", stmt.python_print())
     
     return stmt, tokens
 
@@ -213,6 +237,78 @@ def parse_custom_statement(tokens: deque, token: str, statement_bounds: List[Tup
 
     return stmt, tokens
 
+def parse_while(tokens: deque, while_bounds):
+    condition, tokens = parse_condition(tokens)
+    while_bounds = get_overall_bounds([while_bounds, condition.bounds])
+
+    next, next_bounds = tokens.popleft()
+    if next != "Do":
+        raise Exception("Expected Do")
+    while_bounds = get_overall_bounds([while_bounds, next_bounds])
+
+    body, body_bounds, next, next_bounds = parse_statement_block(tokens, ["End"])
+    while_bounds = get_overall_bounds([while_bounds, body_bounds])
+
+    next, next_bounds = tokens.popleft()
+    if next != "LineBreak":
+        raise Exception("Expected LineBreak")
+
+    stmt = WhileStatement(while_bounds, condition, body)
+
+    print("Parsed while statement ", stmt.python_print())
+
+    return stmt, tokens
+
+def parse_for(tokens: deque, for_bounds: List[Tuple[int, int]]):
+    count, count_bounds = tokens.popleft()
+    for_bounds = get_overall_bounds([for_bounds, count_bounds])
+
+    next, next_bounds = tokens.popleft()
+    if next != "From":
+        raise Exception("Expected LineBreak")
+    for_bounds = get_overall_bounds([for_bounds, next_bounds])
+
+    lower_bound, lower_bound_bounds = tokens.popleft()
+    next, next_bounds = tokens.popleft()
+    while next != "To":
+        lower_bound += " "
+        lower_bound += next
+        lower_bound_bounds = get_overall_bounds([lower_bound_bounds, next_bounds])
+        next, next_bounds = tokens.popleft()
+    for_bounds = get_overall_bounds([for_bounds, lower_bound_bounds, next_bounds])
+
+    upper_bound, upper_bound_bounds = tokens.popleft()
+
+    next, next_bounds = tokens.popleft()
+    while next != "LineBreak":
+        upper_bound += " "
+        upper_bound += next
+        upper_bound_bounds = get_overall_bounds([upper_bound_bounds, next_bounds])
+        next, next_bounds = tokens.popleft()
+    for_bounds = get_overall_bounds([for_bounds, next_bounds, upper_bound_bounds])
+
+    next, next_bounds = tokens.popleft()
+    if next != "Do":
+        raise Exception("Expected Do")
+    for_bounds = get_overall_bounds([for_bounds, next_bounds])
+
+    body, body_bounds, next, next_bounds = parse_statement_block(tokens, ["End"])
+    for_bounds = get_overall_bounds([for_bounds, body_bounds])
+
+    if next != "End":
+        raise Exception("Expected End")
+    for_bounds = get_overall_bounds([for_bounds, next_bounds])
+    
+    next, next_bounds = tokens.popleft()
+    if next != "LineBreak":
+        raise Exception("Expected LineBreak")
+
+    stmt = ForStatement(for_bounds, Identifier(count_bounds, count), Expr(lower_bound_bounds, lower_bound), Expr(upper_bound_bounds, upper_bound), body)
+
+    print("Parsed for statement ", stmt.python_print())
+
+    return stmt, tokens
+
 
 def parse_code(tokens: deque):
     program = Program([(0,0), (0,0), (0,0), (0,0)], [], [])
@@ -229,17 +325,17 @@ def parse_code(tokens: deque):
             case "If":
                 stmt, tokens = parse_if_statement(tokens, bounds)
                 program.add_statement(stmt)
-            # case "Return":
-            #     stmt, tokens = parse_return(tokens)
-            #     program.add_statement(stmt)
-            # case "For":
-            #     stmt, tokens = parse_for(tokens)
-            #     program.add_statement(stmt)
-            # case "While":
-            #     stmt, tokens = parse_while(tokens)
-            #     program.add_statement(stmt)
+            case "Return":
+                stmt, tokens = parse_return(tokens, bounds)
+                program.add_statement(stmt)
+            case "For":
+                stmt, tokens = parse_for(tokens, bounds)
+                program.add_statement(stmt)
+            case "While":
+                stmt, tokens = parse_while(tokens, bounds)
+                program.add_statement(stmt)
             # case "Call":
-            #     stmt, tokens = parse_call(tokens)
+            #     stmt, tokens = parse_call(tokens, bounds)
             #     program.add_statement(stmt)
             case _:
                 stmt, tokens = parse_custom_statement(tokens, token, bounds)
@@ -248,34 +344,90 @@ def parse_code(tokens: deque):
     return program
 
 def test_python_printing(prog: Program):
+    print("\nCode:\n")
     print(prog.python_print())
 
-def test_parsing():
+def tokens_1():
     tokens = deque()
     tokens.append(("Function", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("foo", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
     tokens.append(("Take", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("x", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
     tokens.append(("Do", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("If", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("x = 5", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
     tokens.append(("Then", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("x", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
     tokens.append(("Else", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("y", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
-    tokens.append(("End", [(0,0), (0,1), (1,1), (1,0)]))
-    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
     tokens.append(("End", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
-    prog = parse_code(tokens)
+    tokens.append(("Return", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Z", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("End", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+
+
+    tokens.append(("y = 3", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("While", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("y < 5", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("Do", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("y", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("y += 1", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("End", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    return tokens
+
+def tokens_2():
+    tokens = deque()
+
+    tokens.append(("For", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("i", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("From", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("1", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("To", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("10", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("Do", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("i", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    tokens.append(("End", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
+
+    return tokens
+
+def test_parsing():
+    
+    prog = parse_code(tokens_2())
 
     test_python_printing(prog)
     
