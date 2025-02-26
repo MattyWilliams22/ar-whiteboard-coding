@@ -14,7 +14,7 @@ def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     return image, corners, ids
 
 # Function to create a mask for ArUco markers
-def create_aruco_mask(image, bboxs, ids, buffer=10):
+def create_aruco_mask(image, bboxs, buffer=10):
     mask = np.zeros(image.shape[:2], dtype=np.uint8)  # Create a blank mask of the same size as the image
 
     if bboxs is None:

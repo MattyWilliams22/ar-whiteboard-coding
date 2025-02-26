@@ -18,16 +18,16 @@ def detect_markers(marker_type: str, image):
         case _:
             return None, None, None
 
-def create_mask(marker_type: str, image, bboxs, ids):
+def create_mask(marker_type: str, image, bboxs):
     match marker_type:
         case "aruco4x4_50":
-            return create_aruco_mask(image, bboxs, ids)
+            return create_aruco_mask(image, bboxs)
         case "aruco6x6_50":
-            return create_aruco_mask(image, bboxs, ids)
+            return create_aruco_mask(image, bboxs)
         case "aruco6x6_250":
-            return create_aruco_mask(image, bboxs, ids)
+            return create_aruco_mask(image, bboxs)
         case "colour":
-            return create_rectangle_mask(image, bboxs, ids)
+            return create_rectangle_mask(image, bboxs)
         case _:
             return None
         
@@ -63,7 +63,7 @@ def detect_code(marker_type: str, ocr_type: str, image):
         print("Error: Marker detection failed")
         return None, None
 
-    mask = create_mask(marker_type, image, bboxs, ids)
+    mask = create_mask(marker_type, image, bboxs)
 
     image, text = detect_text(ocr_type, image, mask)
 

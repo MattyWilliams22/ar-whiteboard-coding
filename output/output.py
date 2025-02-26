@@ -1,5 +1,6 @@
 from output.window import output_to_window
 from output.file import output_to_file
+from output.projector_app import run_editor
 
 def output(output_type: str, image, code):
     if image is None:
@@ -16,5 +17,7 @@ def output(output_type: str, image, code):
             output_to_file(image, code)
         case "console":
             print(code)
+        case "project":
+            run_editor(initial_code=code)
         case _:
             print("Invalid output type")

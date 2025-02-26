@@ -70,18 +70,20 @@ def create_rectangle_mask(image, rectangles, buffer=10):
     for rect in rectangles:
         # Convert box points to integers
         rect = np.int32(rect)
+        rect = np.squeeze(rect, axis=1)
+        print(rect.shape)
         
         # Create a bounding rectangle around the marker (with buffer)
-        x_min = min(rect[:, 0]) - buffer
-        x_max = max(rect[:, 0]) + buffer
-        y_min = min(rect[:, 1]) - buffer
-        y_max = max(rect[:, 1]) + buffer
+        x_min = np.min(rect[:, 0]) - buffer
+        x_max = np.max(rect[:, 0]) + buffer
+        y_min = np.min(rect[:, 1]) - buffer
+        y_max = np.max(rect[:, 1]) + buffer
         
         # Ensure the coordinates are within the image bounds
-        x_min = max(0, x_min)
-        x_max = min(image.shape[1], x_max)
-        y_min = max(0, y_min)
-        y_max = min(image.shape[0], y_max)
+        x_min = np.max(0, x_min)
+        x_max = np.min(image.shape[1], x_max)
+        y_min = np.max(0, y_min)
+        y_max = np.min(image.shape[0], y_max)
         
         # Convert to integers to ensure proper indexing
         x_min = int(x_min)
