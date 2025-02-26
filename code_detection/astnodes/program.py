@@ -9,12 +9,23 @@ class Program(Node):
         super().__init__(bounds, "Program")
         self.functions = functions
         self.statements = statements
+
+    def get_overall_bounds(self, bounds: List[List[Tuple[int, int]]]):
+        min_x = min([min([x for x, y in box]) for box in bounds])
+        min_y = min([min([y for x, y in box]) for box in bounds])
+        max_x = max([max([x for x, y in box]) for box in bounds])
+        max_y = max([max([y for x, y in box]) for box in bounds])
+
+        # Check this later
+        return [(min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)]
     
     def add_function(self, function: Function):
         self.functions.append(function)
+        self.bounds = self.get_overall_bounds([self.bounds, function.bounds])
 
     def add_statement(self, statement: Statement):
         self.statements.append(statement)
+        self.bounds = self.get_overall_bounds([self.bounds, statement.bounds])
         
     def python_print(self):
         program = ""

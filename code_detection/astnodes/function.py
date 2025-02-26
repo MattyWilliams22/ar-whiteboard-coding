@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 class Function(Node):
 
-    def __init__(self, bounds: List[Tuple[int, int]], name: Identifier, arguments: List[Argument], body: List[Statement]):
+    def __init__(self, bounds: List[Tuple[int, int]], name: Identifier, arguments: List[str], body: List[Statement]):
         super().__init__(bounds, "Function")
         self.name = name
         self.arguments = arguments
@@ -17,7 +17,7 @@ class Function(Node):
         function = f"def {self.name.python_print()}("
 
         for i, argument in enumerate(self.arguments):
-            function += argument.python_print()
+            function += argument
             if i < len(self.arguments) - 1:
                 function += ", "
 
