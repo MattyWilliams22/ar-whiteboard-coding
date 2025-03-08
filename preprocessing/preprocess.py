@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def preprocess_whiteboard(image):
+def preprocess_image(image):
     # Step 1: Convert to grayscale
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -20,7 +20,7 @@ def preprocess_whiteboard(image):
 if __name__ == "__main__":
     image = cv2.imread("test_images/persp.jpg")
     cv2.imshow("Original Image", image)
-    processed_image = preprocess_whiteboard(image)
+    processed_image = preprocess_image(image)
     cv2.imshow("Processed Image", processed_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
