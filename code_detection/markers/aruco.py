@@ -3,12 +3,37 @@ import cv2.aruco as aruco
 import numpy as np
 from code_detection.markers.keywords import get_keyword
 
+def transform_bounding_boxes(bboxs):
+    ARUCO_COORDS = np.array([[-1, 1], [1, 1], [1, -1], [-1, -1]], dtype=np.float32)
+    CARD_COORDS = np.array([[-1.3, 1.3], [8.2, 1.3], [8.2, -1.3], [-1.3, -1.3]], dtype=np.float32)
+    
+    transformed_bboxs = []
+    
+    for bbox in bboxs:
+        pixel_coords = np.array(bbox, dtype=np.float32).reshape(1, 4, 2)  # Ensure it's the right shape
+        
+        # Compute transformation matrix from pixel coordinates to ARUCO_COORDS
+        transform_matrix = cv2.getPerspectiveTransform(pixel_coords.reshape(4, 2), ARUCO_COORDS)
+        
+        # Compute inverse transformation matrix
+        inverse_matrix = np.linalg.inv(transform_matrix)
+        
+        # Transform CARD_COORDS to new pixel coordinates
+        new_bbox = cv2.perspectiveTransform(CARD_COORDS.reshape(1, 4, 2), inverse_matrix)
+        
+        transformed_bboxs.append(new_bbox)
+    
+    return transformed_bboxs
+
 # ArUco marker detection function
 def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary)
     aruco_params = cv2.aruco.DetectorParameters()
     corners, ids, _ = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
+
+    corners = transform_bounding_boxes(corners)
+
     if ids is not None:
         aruco.drawDetectedMarkers(image, corners, ids)
     return image, corners, ids

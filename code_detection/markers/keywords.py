@@ -1,17 +1,25 @@
 # Function to map marker IDs to text
 def get_keyword(index):
     match index:
-        case 203:
-            return "IF"
-        case 23:
-            return "ELSE"
-        case 124:
-            return "FOR"
-        case 62:
-            return "WHILE"
-        case 40:
-            return "PRINT"
-        case 98:
-            return "RETURN"
+        case 0:
+            return "Function"
+        case 1:
+            return "If"
+        case 2:
+            return "Then"
+        case 3:
+            return "Else"
+        case 4:
+            return "While"
+        case 5:
+            return "Do"
+        case 6:
+            return "For"
+        case 7:
+            return "Print"
+        case 8:
+            return "Return"
+        case 9:
+            return "Break"
         case _:
             return "UNKNOWN"

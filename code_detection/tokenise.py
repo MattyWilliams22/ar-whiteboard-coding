@@ -1,4 +1,5 @@
 from collections import deque
+import numpy as np
 
 def convert_to_tokens(input_data, scale_factor=0.5):
     """
@@ -13,64 +14,83 @@ def convert_to_tokens(input_data, scale_factor=0.5):
     deque: A deque containing the tokens and their coordinates.
     """
     tokens = deque()
-    current_line = []
-    previous_center = -float('inf')  # Initialize to negative infinity to start the first line
+    lines = []  # List of lines, each line is a list of (text, coordinates)
 
-    # Process the input data
-    for box in input_data:
-        for item in box:
-            # Extract the coordinates and text
-            coordinates = item[0]  # This is the bounding box
-            text = item[1][0]      # Extract the text from the tuple
+    # Process each text box
+    for item in input_data:
+        coordinates = item[0]  # Bounding box (numpy array of shape (4,2))
+        text = item[1]         # Extract the text directly (string)
 
-            # Calculate the height of the bounding box
-            height = max(point[1] for point in coordinates) - min(point[1] for point in coordinates)
+        # Calculate the height of the bounding box
+        height = max(point[1] for point in coordinates) - min(point[1] for point in coordinates)
 
-            # Calculate the vertical center of the bounding box
-            top_y = min(point[1] for point in coordinates)
-            bottom_y = max(point[1] for point in coordinates)
-            center_y = (top_y + bottom_y) / 2  # Vertical center
+        # Calculate the vertical center of the bounding box
+        top_y = min(point[1] for point in coordinates)
+        bottom_y = max(point[1] for point in coordinates)
+        center_y = (top_y + bottom_y) / 2  # Vertical center
 
-            # Calculate the dynamic line threshold
-            line_threshold = height * scale_factor
+        # Calculate the dynamic line threshold
+        line_threshold = height * scale_factor
 
-            # Check if the current box's center is within the line threshold of the previous center
-            if abs(center_y - previous_center) <= line_threshold:
-                current_line.append((text, coordinates))
-            else:
-                # If the current line is not empty, sort by x position and add it to tokens
-                if current_line:
-                    # Sort the current line by the minimum x-coordinate of the bounding box
-                    current_line.sort(key=lambda item: min(point[0] for point in item[1]))
-                    for token in current_line:
-                        tokens.append(token)  # Append all tokens from the current line
-                    tokens.append(("LineBreak", []))  # Add LineBreak token
+        # Find the most appropriate line for the current box
+        best_line = None
+        best_index = -1
+        for i, line in enumerate(lines):
+            line_center_y = np.mean([((min(pt[1] for pt in box[1]) + max(pt[1] for pt in box[1])) / 2) for box in line])
+            if abs(center_y - line_center_y) <= line_threshold:
+                best_line = line
+                best_index = i
+                break
 
-                # Start a new line
-                current_line = [(text, coordinates)]
-            
-            # Update the previous center to the current box's center_y
-            previous_center = center_y
+        if best_line is not None:
+            best_line.append((text, coordinates))
+        else:
+            lines.append([(text, coordinates)])
 
-        # If there's remaining text in the current line, sort and append it
-        if current_line:
-            # Sort the current line by the minimum x-coordinate of the bounding box
-            current_line.sort(key=lambda item: min(point[0] for point in item[1]))
-            for token in current_line:
-                tokens.append(token)
-            tokens.append(("LineBreak", []))  # Add LineBreak token for the last line
+    # Merge lines if necessary (when lines are too close)
+    merged_lines = []
+    for line in lines:
+        if merged_lines and abs(np.mean([((min(pt[1] for pt in box[1]) + max(pt[1] for pt in box[1])) / 2) for box in line]) -
+                                np.mean([((min(pt[1] for pt in box[1]) + max(pt[1] for pt in box[1])) / 2) for box in merged_lines[-1]])) <= line_threshold:
+            merged_lines[-1].extend(line)
+        else:
+            merged_lines.append(line)
+
+    # Sort and append tokens to deque
+    for line in merged_lines:
+        line.sort(key=lambda item: min(point[0] for point in item[1]))
+        for token in line:
+            tokens.append(token)
+        tokens.append(("LineBreak", []))  # Add LineBreak token between lines
 
     return tokens
 
-# Corrected input data
-input_data = [[
-    [[[1414.0, 1120.0], [1719.0, 1131.0], [1715.0, 1256.0], [1410.0, 1244.0]], ('X=4', 0.7917352318763733)],
-    [[[1424.0, 1271.0], [1945.0, 1271.0], [1945.0, 1405.0], [1424.0, 1405.0]], ('IFx>5', 0.8555850982666016)],
-    [[[1429.0, 1426.0], [2621.0, 1439.0], [2620.0, 1573.0], [1428.0, 1559.0]], ('THEN PRINTGrahaM)', 0.9120262265205383)]
-]]
+def queue_to_string(tokens):
+    """
+    Convert the deque of tokens into a human-readable string representation.
 
-tokens = convert_to_tokens(input_data)
+    Args:
+    tokens (deque): The deque containing tokens and their coordinates.
 
-# Print the resulting tokens
-for token in tokens:
-    print(token)
+    Returns:
+    str: A formatted string representation of the queue of tokens.
+    """
+    result = []
+    line_tokens = []
+
+    for token in tokens:
+        if token[0] == "LineBreak":
+            # When we encounter the "LineBreak" token, we finalize the current line and add it to the result.
+            if line_tokens:
+                result.append(" ".join(line_tokens))
+                line_tokens = []  # Reset for the next line
+            result.append("\n")  # Add a line break in the string
+        else:
+            text, _ = token  # Extract the text from the token
+            line_tokens.append(text)  # Append the token's text to the line
+
+    # Add any remaining tokens in the final line
+    if line_tokens:
+        result.append(" ".join(line_tokens))
+
+    return "".join(result)

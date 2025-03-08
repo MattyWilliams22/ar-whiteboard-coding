@@ -1,5 +1,8 @@
 import cv2
 from code_detection.detect_code import detect_code
+from code_detection.tokenise import convert_to_tokens
+from code_detection.parse_code import *
+from code_detection.astnodes import *
 from output.output import output
 
 INPUT_TYPE = "file"
@@ -36,16 +39,39 @@ def main():
         print("Error: Preprocessing failed")
         exit()
 
-    image, code = detect_code(MARKER_TYPE, OCR_TYPE, image)
+    image, boxes = detect_code(MARKER_TYPE, OCR_TYPE, image)
 
     if image is None:
         print("Error: Code detection failed")
         exit()
-    if code is None:
-        print("Error: Code recognition failed")
+    if boxes is None:
+        print("Error: Box recognition failed")
         exit()
+    print(boxes)
+    print("\n")
 
-    output(OUTPUT_TYPE, image, code)
+    tokens = convert_to_tokens(boxes)
+    if boxes is None:
+        print("Error: Tokenisation failed")
+        exit()
+    print(tokens)
+    print("\n")
+
+    program = parse_code(tokens)
+    if program is None:
+        print("Error: Parsing failed")
+        exit()
+    print(program)
+    print("\n")
+
+    python_code = program.python_print()
+    if program is None:
+        print("Error: Python printing failed")
+        exit()
+    print(python_code)
+    print("\n")
+
+    output(OUTPUT_TYPE, image, python_code)
 
 if __name__ == "__main__":
     main()
