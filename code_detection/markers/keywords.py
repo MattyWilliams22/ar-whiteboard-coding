@@ -1,3 +1,6 @@
+# Index of largest code marker ID
+CODE_MAX = 16
+
 # Function to map marker IDs to text
 def get_keyword(index):
     match index:
