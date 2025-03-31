@@ -4,9 +4,13 @@ from typing import List, Tuple
 
 class PrintStatement(Statement):
   
-    def __init__(self, bounds: List[Tuple[int, int]], value: Expr):
+    def __init__(self, bounds: List[Tuple[int, int]], value: Expr, toString: bool = False):
         super().__init__(bounds, "Print")
         self.value = value
+        self.toString = toString
         
     def python_print(self):
-        return f"print(\"{self.value.python_print()}\")"
+        if self.toString:
+            return f"print(str({self.value.python_print()}))"
+        else:
+            return f"print(\"{self.value.python_print()}\")"
