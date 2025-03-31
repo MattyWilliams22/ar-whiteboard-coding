@@ -85,9 +85,16 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
 def parse_print(tokens: deque, print_bounds: List[Tuple[int, int]]):
     expr, expr_bounds = tokens.popleft()
 
+    toString = False
+
+    if expr == "Str":
+        toString = True
+        print_bounds = get_overall_bounds([print_bounds, expr_bounds])
+        expr, expr_bounds = tokens.popleft()
+
     next, next_bounds = tokens.popleft()
 
-    while next != "LineBreak" and not tokens.empty():
+    while next != "LineBreak":
         expr += " "
         expr += next
         expr_bounds = get_overall_bounds([expr_bounds, next_bounds])
@@ -100,7 +107,7 @@ def parse_print(tokens: deque, print_bounds: List[Tuple[int, int]]):
 
     new_bounds = get_overall_bounds([print_bounds, expr_bounds])
 
-    stmt = PrintStatement(new_bounds, expr)
+    stmt = PrintStatement(new_bounds, expr, toString)
 
     print("Parsed print statement ", stmt.python_print())
     
@@ -373,11 +380,13 @@ def tokens_1():
 
     tokens.append(("Then", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Str", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("x", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
     tokens.append(("Else", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Str", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("y", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
@@ -402,6 +411,7 @@ def tokens_1():
 
     tokens.append(("Do", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Str", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("y", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
@@ -431,11 +441,13 @@ def tokens_2():
 
     tokens.append(("Then", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Str", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("x", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
     tokens.append(("Else", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Str", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("y", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
@@ -470,6 +482,7 @@ def tokens_2():
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
     tokens.append(("Print", [(0,0), (0,1), (1,1), (1,0)]))
+    tokens.append(("Str", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("x", [(0,0), (0,1), (1,1), (1,0)]))
     tokens.append(("LineBreak", [(0,0), (0,1), (1,1), (1,0)]))
 
