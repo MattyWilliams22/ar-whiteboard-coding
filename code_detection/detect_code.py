@@ -4,7 +4,7 @@ import numpy as np
 from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask, draw_aruco_keywords
 from code_detection.markers.colours import detect_colored_rectangles, create_rectangle_mask, draw_rectangle_keywords
 from code_detection.ocr.paddleocr import detect_paddleocr_text
-from code_detection.markers.keywords import get_keyword
+from code_detection.markers.keywords import get_keyword, CODE_MAX
 
 def combine_markers_and_text(handwritten_text, bboxs, ids):
     text_map = []
@@ -22,14 +22,16 @@ def combine_markers_and_text(handwritten_text, bboxs, ids):
         text_map.append((corners, text))
 
     for i in range(len(bboxs)):
-        box = bboxs[i][0]
+        # Check if the marker ID is within the valid range
+        if ids[i][0] <= CODE_MAX:
+            box = bboxs[i][0]
 
-        corners = np.array([[box[0][0], box[0][1]], [box[1][0], box[1][1]], 
+            corners = np.array([[box[0][0], box[0][1]], [box[1][0], box[1][1]], 
                             [box[2][0], box[2][1]], [box[3][0], box[3][1]]])
-        
-        text = get_keyword(ids[i][0])
+            
+            text = get_keyword(ids[i][0])
 
-        text_map.append((corners, text))
+            text_map.append((corners, text))
 
     return text_map
 
