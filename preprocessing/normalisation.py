@@ -26,7 +26,7 @@ def find_corner_markers(corners, ids):
         return np.array([top_left, top_right, bottom_right, bottom_left], dtype=np.float32)
     return None
 
-def normalize_whiteboard(image, aruco_dict_type=cv2.aruco.DICT_4X4_50, margin=50):
+def normalize_whiteboard(image, aruco_dict_type=cv2.aruco.DICT_6X6_50, margin=10):
     aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
     aruco_params = cv2.aruco.DetectorParameters()
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -45,7 +45,7 @@ def normalize_whiteboard(image, aruco_dict_type=cv2.aruco.DICT_4X4_50, margin=50
     homography_matrix = cv2.getPerspectiveTransform(src_points, dst_points)
     width, height = image.shape[1] + 2 * margin, image.shape[0] + 2 * margin
     normalized_image = cv2.warpPerspective(image, homography_matrix, (width, height))
-    return normalized_image, homography_matrix
+    return normalized_image
 
 def scale_image_for_screen(image, screen_width=1920, screen_height=1080):
     height, width = image.shape[:2]

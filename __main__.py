@@ -1,4 +1,5 @@
 import cv2
+from preprocessing.normalisation import normalize_whiteboard
 from code_detection.detect_code import detect_code
 from code_detection.tokenise import convert_to_tokens
 from code_detection.parse_code import *
@@ -7,12 +8,12 @@ from output.output import output
 
 INPUT_TYPE = "file"
 
-PREPROCESSING_STEPS = []
+PREPROCESSING_STEPS = [normalize_whiteboard]
 
-MARKER_TYPE = "aruco4x4_50"
+MARKER_TYPE = "aruco6x6_50"
 OCR_TYPE = "paddleocr"
 
-OUTPUT_TYPE = "window"
+OUTPUT_TYPE = "projector"
 
 def get_input(input_type: str):
     if input_type == "file":
@@ -71,7 +72,7 @@ def main():
     print(python_code)
     print("\n")
 
-    output(OUTPUT_TYPE, image, python_code)
+    output(OUTPUT_TYPE, image, python_code, boxes)
 
 if __name__ == "__main__":
     main()
