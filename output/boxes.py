@@ -44,10 +44,15 @@ def display_bounding_boxes(text_map, output_size=(1920, 1080), aruco_dict_type=c
         background = np.zeros((output_size[1], output_size[0], 4), dtype=np.uint8)  # Transparent background
 
     # Generate random colors for each text label
-    colors = {text: (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255), 255) for _, text in text_map}
+    # colors = {text: (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255), 255) for _, text in text_map}
+    colors = {text: (0, 255, 0, 255) for _, text in text_map}  # Green colour for all boxes
     
     # Scale and draw each bounding box
     for corners, text in text_map:
+        # Ignore corner markers
+        if text in ["Top Left", "Top Right", "Bottom Left", "Bottom Right"]:
+            continue
+
         color = colors[text]
         cv2.polylines(background, [corners.astype(int)], isClosed=True, color=color, thickness=2)
     
@@ -74,6 +79,19 @@ def display_bounding_boxes(text_map, output_size=(1920, 1080), aruco_dict_type=c
     
     # Return the image
     return background
+
+def display_bounding_box(image, corners, color=(0, 255, 0), thickness=2):
+    """
+    Draws a bounding box and text on the image.
+
+    :param image: The image on which to draw.
+    :param corners: The corners of the bounding box as a numpy array of shape (4,2).
+    :param text: The text to display inside the bounding box.
+    :param color: Color of the bounding box.
+    :param thickness: Thickness of the bounding box lines.
+    """
+    cv2.polylines(image, [corners.astype(int)], isClosed=True, color=color, thickness=thickness)
+    return image
 
 def render_code_in_bbox(image, code, bbox, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1):
     """
@@ -266,7 +284,7 @@ def create_boxes(text_map, output_size=None):
     
     return py_box, out_box
 
-def display_projection(text_map, python_code=None, code_output=None, input_size=(1920, 1080), aruco_dict_type=cv2.aruco.DICT_4X4_50, marker_size=100, output_size=(1280,790), image=None):
+def display_projection(text_map, python_code=None, code_output=None, input_size=(1920, 1080), aruco_dict_type=cv2.aruco.DICT_4X4_50, marker_size=100, output_size=(1280,790), image=None, error_box=None):
     """
     Displays colored rectangles on an image or a transparent background for projector display with ArUco markers in corners.
 
@@ -279,12 +297,10 @@ def display_projection(text_map, python_code=None, code_output=None, input_size=
     """
     # Scale bounding boxes
     text_map = scale_bounding_boxes(text_map, input_size, output_size)
+    error_box = scale_bounding_boxes([(np.array(error_box), "")], input_size, output_size)[0][0] if error_box is not None else None
 
     # Create boxes for Python and Output sections
     py_box, out_box = create_boxes(text_map, output_size=output_size)
-
-    print("Python Box: ", py_box)
-    print("Output Box: ", out_box)
     
     # Display the bounding boxes with ArUco markers
     image = display_bounding_boxes(text_map, output_size=output_size, aruco_dict_type=aruco_dict_type, marker_size=marker_size, image=image)
@@ -294,5 +310,7 @@ def display_projection(text_map, python_code=None, code_output=None, input_size=
         image = render_code_in_bbox(image, python_code, py_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1)
     if out_box is not None:
         image = render_code_in_bbox(image, code_output, out_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1)
+    if error_box is not None:
+        image = display_bounding_box(image, error_box, color=(0, 0, 255), thickness=2)
 
     return image

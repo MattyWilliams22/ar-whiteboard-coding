@@ -4,7 +4,7 @@ from output.file import output_to_file
 from output.projector_app import run_editor
 from output.boxes import display_projection
 
-def output(output_type: str, image, python_code, code_output, boxes=None):
+def output(output_type: str, image, python_code, code_output, boxes=None, error_box=None):
     if image is None:
         print("No image detected")
         return
@@ -22,7 +22,7 @@ def output(output_type: str, image, python_code, code_output, boxes=None):
         # case "project":
         #     run_editor(initial_code=code)
         case "projector":
-            return display_projection(boxes, python_code, code_output, input_size=(image.shape[1], image.shape[0]), aruco_dict_type=cv2.aruco.DICT_6X6_50, marker_size=35, output_size=(1280,790), image=None)
+            return display_projection(boxes, python_code, code_output, input_size=(image.shape[1], image.shape[0]), aruco_dict_type=cv2.aruco.DICT_6X6_50, marker_size=35, output_size=(1280,800), image=None, error_box=error_box)
         case _:
             print("Invalid output type")
             return None

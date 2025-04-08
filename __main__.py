@@ -51,38 +51,38 @@ def process_image(image):
         image = step(image)
 
     if image is None:
-        return None, None, "Error: Preprocessing failed"
+        return None, None, "Error: Preprocessing failed", None
 
     image, boxes = detect_code(MARKER_TYPE, OCR_TYPE, image)
 
     if image is None:
-        return boxes, None, "Error: Code detection failed"
+        return boxes, None, "Error: Code detection failed", None
     if boxes is None:
-        return None, None, "Error: Box recognition failed"
-    print(boxes)
-    print("\n")
+        return None, None, "Error: Box recognition failed", None
+    # print(boxes)
+    # print("\n")
 
     tokens = convert_to_tokens(boxes)
     if boxes is None:
-        return boxes, None, "Error: Tokenisation failed"
-    print(tokens)
-    print("\n")
+        return boxes, None, "Error: Tokenisation failed", None
+    # print(tokens)
+    # print("\n")
 
-    program = parse_code(tokens)
-    if program is None:
-        return boxes, None, "Error: Parsing failed"
-    print(program)
-    print("\n")
+    program, error, error_box = parse_code(tokens)
+    if program is None or error is not None:
+        return boxes, None, "Error: Parsing failed (" + error + ")", error_box
+    # print(program)
+    # print("\n")
 
     python_code = program.python_print()
     if python_code is None:
-        return boxes, None, "Error: Python printing failed"
-    print(python_code)
-    print("\n")
+        return boxes, None, "Error: Python printing failed", None
+    # print(python_code)
+    # print("\n")
 
     code_output = execute_python_code(python_code)
     if code_output is None:
-        return boxes, python_code, "Error: Code execution failed"
+        return boxes, python_code, "Error: Code execution failed", None
 
     return boxes, python_code, code_output
     
@@ -93,13 +93,22 @@ def main():
         print("Error: Unable to load image")
         exit()
 
-    boxes, python_code, code_output = process_image(image)
+    boxes, python_code, code_output, error_box = process_image(image)
 
-    projection = output(OUTPUT_TYPE, image, python_code, code_output, boxes)
+    print(error_box)
+
+    if python_code is None:
+        python_code = "..."
+    if code_output is None:
+        code_output = "..."
+
+    projection = output(OUTPUT_TYPE, image, python_code, code_output, boxes, error_box)
     if projection is None:
         print("Error: Output failed")
         exit()
 
+    cv2.namedWindow('Output', cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty('Output', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     cv2.imshow("Output", projection)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
