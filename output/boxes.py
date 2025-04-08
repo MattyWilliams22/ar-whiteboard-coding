@@ -69,7 +69,7 @@ def display_bounding_boxes(text_map, output_size=(1920, 1080), aruco_dict_type=c
     
     # Generate and place ArUco markers
     for i, pos in enumerate(aruco_positions):
-        marker_image = generate_aruco_marker(aruco_dict, i, marker_size)
+        marker_image = generate_aruco_marker(aruco_dict, 49 - i, marker_size)
         marker_resized = cv2.resize(marker_image, (marker_size, marker_size))  # Ensure correct size
         marker_bgr = cv2.cvtColor(marker_resized, cv2.COLOR_GRAY2BGR)
         marker_bgra = cv2.merge((marker_bgr, np.full((marker_size, marker_size), 255, dtype=np.uint8)))  # Add alpha channel
