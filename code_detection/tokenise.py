@@ -21,6 +21,9 @@ def convert_to_tokens(input_data, scale_factor=0.5):
         coordinates = item[0]  # Bounding box (numpy array of shape (4,2))
         text = item[1]         # Extract the text directly (string)
 
+        if text in ["Python Code:", "Output:", "Bottom Left", "Bottom Right", "Top Right", "Top Left", "UNKNOWN"]:
+            continue
+
         # Calculate the height of the bounding box
         height = max(point[1] for point in coordinates) - min(point[1] for point in coordinates)
 

@@ -22,16 +22,14 @@ def combine_markers_and_text(handwritten_text, bboxs, ids):
         text_map.append((corners, text))
 
     for i in range(len(bboxs)):
-        # Check if the marker ID is within the valid range
-        if ids[i][0] <= CODE_MAX:
-            box = bboxs[i][0]
+        box = bboxs[i][0]
 
-            corners = np.array([[box[0][0], box[0][1]], [box[1][0], box[1][1]], 
-                            [box[2][0], box[2][1]], [box[3][0], box[3][1]]])
-            
-            text = get_keyword(ids[i][0])
+        corners = np.array([[box[0][0], box[0][1]], [box[1][0], box[1][1]], 
+                        [box[2][0], box[2][1]], [box[3][0], box[3][1]]])
+        
+        text = get_keyword(ids[i][0])
 
-            text_map.append((corners, text))
+        text_map.append((corners, text))
 
     return text_map
 
@@ -99,12 +97,6 @@ def detect_code(marker_type: str, ocr_type: str, image):
 
     if image is None:
         print("Error: Text detection failed")
-        return None, None
-
-    image = draw_keywords(marker_type, image, bboxs, ids)
-
-    if image is None:
-        print("Error: Drawing keywords failed")
         return None, None
 
     boxes = combine_markers_and_text(text, bboxs, ids)

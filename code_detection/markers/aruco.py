@@ -85,8 +85,8 @@ def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
 
     corners = transform_bounding_boxes_simple(corners)
 
-    if ids is not None:
-        aruco.drawDetectedMarkers(image, corners, ids)
+    # if ids is not None:
+    #     aruco.drawDetectedMarkers(image, corners, ids)
     return image, corners, ids
 
 # Function to create a mask for ArUco markers
