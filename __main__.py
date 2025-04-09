@@ -4,9 +4,7 @@ import sys
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detect_code import detect_code
 from code_detection.tokeniser import Tokeniser
-from code_detection.parse_code import *
-from code_detection.astnodes import *
-from output.output import output
+from code_detection.parser import Parser
 from output.projector import Projector
 
 INPUT_TYPE = "file"
@@ -62,13 +60,10 @@ def process_image(image):
     if tokens is None:
         return image, boxes, None, "Error: Tokenisation failed", None
 
-    program, error, error_box = parse_code(tokens)
-    if program is None or error is not None:
-        return image, boxes, None, "Error: Parsing failed (" + error + ")", error_box
-
-    python_code = program.python_print()
-    if python_code is None:
-        return image, boxes, None, "Error: Python printing failed", None
+    parser = Parser(tokens)
+    program, python_code, error_message, error_box = parser.parse()
+    if program is None or python_code is None:
+        return image, boxes, python_code, error_message, error_box
 
     code_output = execute_python_code(python_code)
     if code_output is None:
