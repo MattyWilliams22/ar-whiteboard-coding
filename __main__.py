@@ -1,6 +1,7 @@
 import cv2
 import io
 import sys
+from input.camera import Camera
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detect_code import detect_code
 from code_detection.tokeniser import Tokeniser
@@ -8,25 +9,10 @@ from code_detection.parser import Parser
 from execution.executor import Executor
 from output.projector import Projector
 
-INPUT_TYPE = "file"
-
 MARKER_TYPE = "aruco6x6_50"
 OCR_TYPE = "paddleocr"
 
 OUTPUT_TYPE = "projector"
-
-def get_input(input_type: str):
-    if input_type == "file":
-        # image_path = input("Enter the path to the image: ")
-        image_path = "test_images/IMG_1083.JPEG"
-
-        image = cv2.imread(image_path)
-        return image
-    elif input_type == "camera":
-        cap = cv2.VideoCapture(0)
-        _, image = cap.read()
-        cap.release()
-        return image
     
 def process_image(image):
     preprocessor = Preprocessor(image)
@@ -60,10 +46,11 @@ def process_image(image):
     return image, boxes, python_code, code_output, error_box
     
 def main():
-    image = get_input(INPUT_TYPE)
+    camera = Camera(debug_mode=True)
 
+    image = camera.capture_frame()
     if image is None:
-        print("Error: Unable to load image")
+        print("Error: Unable to capture frame")
         exit()
 
     image, boxes, python_code, code_output, error_box = process_image(image)
