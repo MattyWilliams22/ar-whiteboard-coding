@@ -1,7 +1,7 @@
 import cv2
 
 from code_detection.detect_code import detect_code
-from code_detection.tokenise import convert_to_tokens, queue_to_string
+from code_detection.tokeniser import convert_to_tokens, queue_to_string
 from code_detection.parse_code import *
 from code_detection.astnodes import *
 from output.output import output

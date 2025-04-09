@@ -3,7 +3,7 @@ import io
 import sys
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detect_code import detect_code
-from code_detection.tokenise import convert_to_tokens
+from code_detection.tokeniser import Tokeniser
 from code_detection.parse_code import *
 from code_detection.astnodes import *
 from output.output import output
@@ -52,31 +52,23 @@ def process_image(image):
         return None, None, None, "Error: Preprocessing failed", None
 
     image, boxes = detect_code(MARKER_TYPE, OCR_TYPE, image)
-
     if image is None:
         return image, boxes, None, "Error: Code detection failed", None
     if boxes is None:
         return image, None, None, "Error: Box recognition failed", None
-    # print(boxes)
-    # print("\n")
 
-    tokens = convert_to_tokens(boxes)
-    if boxes is None:
+    tokeniser = Tokeniser(boxes)
+    tokens = tokeniser.tokenise()
+    if tokens is None:
         return image, boxes, None, "Error: Tokenisation failed", None
-    # print(tokens)
-    # print("\n")
 
     program, error, error_box = parse_code(tokens)
     if program is None or error is not None:
         return image, boxes, None, "Error: Parsing failed (" + error + ")", error_box
-    # print(program)
-    # print("\n")
 
     python_code = program.python_print()
     if python_code is None:
         return image, boxes, None, "Error: Python printing failed", None
-    # print(python_code)
-    # print("\n")
 
     code_output = execute_python_code(python_code)
     if code_output is None:
