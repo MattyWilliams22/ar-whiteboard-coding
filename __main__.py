@@ -5,6 +5,7 @@ from preprocessing.preprocessor import Preprocessor
 from code_detection.detect_code import detect_code
 from code_detection.tokeniser import Tokeniser
 from code_detection.parser import Parser
+from execution.executor import Executor
 from output.projector import Projector
 
 INPUT_TYPE = "file"
@@ -26,22 +27,6 @@ def get_input(input_type: str):
         _, image = cap.read()
         cap.release()
         return image
-    
-def execute_python_code(python_code):
-    # Redirect stdout to capture the output
-    output_capture = io.StringIO()
-    sys.stdout = output_capture
-
-    try:
-        exec(python_code, {})  # Execute the code in an isolated namespace
-    except Exception as e:
-        print(f"Error: {e}")  # Capture errors if any
-
-    # Restore original stdout
-    sys.stdout = sys.__stdout__
-
-    # Get the captured output
-    return output_capture.getvalue()
     
 def process_image(image):
     preprocessor = Preprocessor(image)
@@ -65,7 +50,10 @@ def process_image(image):
     if program is None or python_code is None:
         return image, boxes, python_code, error_message, error_box
 
-    code_output = execute_python_code(python_code)
+    executor = Executor(python_code)
+    code_output, error_message = executor.execute()
+    if error_message is not None:
+        return image, boxes, python_code, error_message, None
     if code_output is None:
         return image, boxes, python_code, "Error: Code execution failed", None
 
