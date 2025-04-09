@@ -90,8 +90,7 @@ def main():
     if code_output is None:
         code_output = "..."
 
-    projector = Projector(image, python_code, code_output, boxes, error_box)
-
+    projector = Projector(image, python_code, code_output, boxes, error_box, debug_mode=True)
     projection = projector.display_full_projection()
     if projection is None:
         print("Error: Projection failed")

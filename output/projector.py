@@ -3,7 +3,7 @@ import numpy as np
 import textwrap
 
 class Projector:
-  def __init__(self, image, python_code, code_output, boxes, error_box, output_size=(1280,790), aruco_dict_type=cv2.aruco.DICT_6X6_50, marker_size=35, boxes_scaled=False):
+  def __init__(self, image, python_code, code_output, boxes, error_box, output_size=(1280,790), aruco_dict_type=cv2.aruco.DICT_6X6_50, marker_size=35, boxes_scaled=False, debug_mode=False):
     self.image = image
     self.output_image = image
     self.python_code = python_code
@@ -16,6 +16,7 @@ class Projector:
     self.aruco_dict_type = aruco_dict_type
     self.aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
     self.marker_size = marker_size
+    self.debug_mode = debug_mode
 
   def generate_aruco_marker(self, marker_id):
     marker_image = np.zeros((self.marker_size, self.marker_size), dtype=np.uint8)
@@ -35,7 +36,7 @@ class Projector:
   
   def display_bounding_boxes(self):
     # Load or create a blank transparent image
-    if self.output_image is not None:
+    if self.debug_mode == True:
         self.output_image = cv2.resize(self.output_image, (self.output_size[0], self.output_size[1]))  # Resize to the target image size
         # If the image is in BGR format, convert it to BGRA by adding an alpha channel
         if self.output_image.shape[2] == 3:
