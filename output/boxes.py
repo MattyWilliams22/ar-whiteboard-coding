@@ -24,14 +24,12 @@ def scale_bounding_boxes(bounding_boxes, input_size, output_size):
     
     return scaled_boxes
 
-def display_bounding_boxes(text_map, output_size=(1920, 1080), aruco_dict_type=cv2.aruco.DICT_4X4_50, marker_size=100, image=None):
+def display_bounding_boxes(text_map, output_size=(1280, 800), image=None):
     """
     Displays colored rectangles on an image or a transparent background for projector display with ArUco markers in corners.
 
     :param text_map: List of tuples (corners, text), where corners is a numpy array of shape (4,2)
-    :param image_size: Tuple (width, height) of the projector display
-    :param aruco_dict_type: ArUco dictionary type
-    :param marker_size: Size of each ArUco marker in pixels
+    :param output_size: Tuple (width, height) of the projector display
     :param image: Optional image to overlay the bounding boxes on
     """
     # Load or create a blank transparent image
@@ -56,6 +54,10 @@ def display_bounding_boxes(text_map, output_size=(1920, 1080), aruco_dict_type=c
         color = colors[text]
         cv2.polylines(background, [corners.astype(int)], isClosed=True, color=color, thickness=2)
     
+    # Return the image
+    return background
+
+def display_corner_aruco_markers(image, output_size=(1280, 800), aruco_dict_type=cv2.aruco.DICT_4X4_50, marker_size=100):
     # Load ArUco dictionary
     aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
     
@@ -75,10 +77,10 @@ def display_bounding_boxes(text_map, output_size=(1920, 1080), aruco_dict_type=c
         marker_bgra = cv2.merge((marker_bgr, np.full((marker_size, marker_size), 255, dtype=np.uint8)))  # Add alpha channel
         
         # Place the ArUco marker on the background (using BGRA format)
-        background[pos[1]:pos[1]+marker_size, pos[0]:pos[0]+marker_size] = marker_bgra
-    
-    # Return the image
-    return background
+        image[pos[1]:pos[1]+marker_size, pos[0]:pos[0]+marker_size] = marker_bgra
+
+    return image
+
 
 def display_bounding_box(image, corners, color=(0, 255, 0), thickness=2):
     """
@@ -303,7 +305,8 @@ def display_projection(text_map, python_code=None, code_output=None, input_size=
     py_box, out_box = create_boxes(text_map, output_size=output_size)
     
     # Display the bounding boxes with ArUco markers
-    image = display_bounding_boxes(text_map, output_size=output_size, aruco_dict_type=aruco_dict_type, marker_size=marker_size, image=image)
+    image = display_bounding_boxes(text_map, output_size=output_size, image=image)
+    image = display_corner_aruco_markers(image, output_size=output_size, aruco_dict_type=aruco_dict_type, marker_size=marker_size)
 
     # Render the Python code and output in their respective boxes
     if py_box is not None:

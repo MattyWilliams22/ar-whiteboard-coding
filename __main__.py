@@ -7,6 +7,7 @@ from code_detection.tokenise import convert_to_tokens
 from code_detection.parse_code import *
 from code_detection.astnodes import *
 from output.output import output
+from output.projector import Projector
 
 INPUT_TYPE = "file"
 
@@ -51,40 +52,40 @@ def process_image(image):
         image = step(image)
 
     if image is None:
-        return None, None, "Error: Preprocessing failed", None
+        return None, None, None, "Error: Preprocessing failed", None
 
     image, boxes = detect_code(MARKER_TYPE, OCR_TYPE, image)
 
     if image is None:
-        return boxes, None, "Error: Code detection failed", None
+        return image, boxes, None, "Error: Code detection failed", None
     if boxes is None:
-        return None, None, "Error: Box recognition failed", None
+        return image, None, None, "Error: Box recognition failed", None
     # print(boxes)
     # print("\n")
 
     tokens = convert_to_tokens(boxes)
     if boxes is None:
-        return boxes, None, "Error: Tokenisation failed", None
+        return image, boxes, None, "Error: Tokenisation failed", None
     # print(tokens)
     # print("\n")
 
     program, error, error_box = parse_code(tokens)
     if program is None or error is not None:
-        return boxes, None, "Error: Parsing failed (" + error + ")", error_box
+        return image, boxes, None, "Error: Parsing failed (" + error + ")", error_box
     # print(program)
     # print("\n")
 
     python_code = program.python_print()
     if python_code is None:
-        return boxes, None, "Error: Python printing failed", None
+        return image, boxes, None, "Error: Python printing failed", None
     # print(python_code)
     # print("\n")
 
     code_output = execute_python_code(python_code)
     if code_output is None:
-        return boxes, python_code, "Error: Code execution failed", None
+        return image, boxes, python_code, "Error: Code execution failed", None
 
-    return boxes, python_code, code_output
+    return image, boxes, python_code, code_output, error_box
     
 def main():
     image = get_input(INPUT_TYPE)
@@ -93,18 +94,18 @@ def main():
         print("Error: Unable to load image")
         exit()
 
-    boxes, python_code, code_output, error_box = process_image(image)
-
-    print(error_box)
+    image, boxes, python_code, code_output, error_box = process_image(image)
 
     if python_code is None:
         python_code = "..."
     if code_output is None:
         code_output = "..."
 
-    projection = output(OUTPUT_TYPE, image, python_code, code_output, boxes, error_box)
+    projector = Projector(image, python_code, code_output, boxes, error_box)
+
+    projection = projector.display_full_projection()
     if projection is None:
-        print("Error: Output failed")
+        print("Error: Projection failed")
         exit()
 
     cv2.namedWindow('Output', cv2.WINDOW_NORMAL)
