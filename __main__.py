@@ -1,7 +1,7 @@
 import cv2
 import io
 import sys
-from preprocessing.normalisation import normalize_whiteboard
+from preprocessing.preprocessor import Preprocessor
 from code_detection.detect_code import detect_code
 from code_detection.tokenise import convert_to_tokens
 from code_detection.parse_code import *
@@ -10,8 +10,6 @@ from output.output import output
 from output.projector import Projector
 
 INPUT_TYPE = "file"
-
-PREPROCESSING_STEPS = [normalize_whiteboard]
 
 MARKER_TYPE = "aruco6x6_50"
 OCR_TYPE = "paddleocr"
@@ -48,9 +46,8 @@ def execute_python_code(python_code):
     return output_capture.getvalue()
     
 def process_image(image):
-    for step in PREPROCESSING_STEPS:
-        image = step(image)
-
+    preprocessor = Preprocessor(image)
+    image = preprocessor.preprocess_image()
     if image is None:
         return None, None, None, "Error: Preprocessing failed", None
 
