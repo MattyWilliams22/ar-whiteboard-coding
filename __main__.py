@@ -3,7 +3,7 @@ import io
 import sys
 from input.camera import Camera
 from preprocessing.preprocessor import Preprocessor
-from code_detection.detect_code import detect_code
+from code_detection.detector import Detector
 from code_detection.tokeniser import Tokeniser
 from code_detection.parser import Parser
 from execution.executor import Executor
@@ -20,7 +20,8 @@ def process_image(image):
     if image is None:
         return None, None, None, "Error: Preprocessing failed", None
 
-    image, boxes = detect_code(MARKER_TYPE, OCR_TYPE, image)
+    detector = Detector(image)
+    image, boxes = detector.detect_code()
     if image is None:
         return image, boxes, None, "Error: Code detection failed", None
     if boxes is None:
