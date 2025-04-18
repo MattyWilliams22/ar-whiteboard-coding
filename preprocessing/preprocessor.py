@@ -16,9 +16,6 @@ class Preprocessor:
     gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
     corners, ids, _ = cv2.aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_params)
-
-    if ids is None or len(ids) < 4:
-      raise ValueError("Not enough markers detected! Need at least 4.")
     
     self.corners = corners
     self.ids = ids
@@ -56,13 +53,13 @@ class Preprocessor:
     
     src_points = self.get_corner_markers()
     if src_points is None:
-        src_points = self.get_outermost_markers()
+      src_points = self.get_outermost_markers()
 
     dst_points = np.array([
-        [margin, margin],
-        [self.image.shape[1] - margin, margin],
-        [self.image.shape[1] - margin, self.image.shape[0] - margin],
-        [margin, self.image.shape[0] - margin],
+      [margin, margin],
+      [self.image.shape[1] - margin, margin],
+      [self.image.shape[1] - margin, self.image.shape[0] - margin],
+      [margin, self.image.shape[0] - margin],
     ], dtype=np.float32)
 
     homography_matrix = cv2.getPerspectiveTransform(src_points, dst_points)
@@ -75,7 +72,7 @@ class Preprocessor:
     self.preprocessed_image = self.image
     result = self.warp_image()
     if result is not None:
-       print(result)
+      print(result)
 
     return self.preprocessed_image
   
