@@ -17,16 +17,17 @@ class Detector:
     self.boxes = []
 
     # Draw bounding boxes and text on the image
-    for line in self.text[0]:
-      box, prediction = line  # Unpack the bounding box and text
-      text, _ = prediction
+    if self.text[0] is not None:
+      for line in self.text[0]:
+        box, prediction = line  # Unpack the bounding box and text
+        text, _ = prediction
 
-      startX, startY = int(box[0][0]), int(box[0][1])
-      endX, endY = int(box[2][0]), int(box[2][1])
+        startX, startY = int(box[0][0]), int(box[0][1])
+        endX, endY = int(box[2][0]), int(box[2][1])
 
-      corners = np.array([[startX, startY], [endX, startY], [endX, endY], [startX, endY]])
+        corners = np.array([[startX, startY], [endX, startY], [endX, endY], [startX, endY]])
 
-      self.boxes.append((corners, text))
+        self.boxes.append((corners, text))
 
     for i in range(len(self.corners)):
       box = self.corners[i][0]
