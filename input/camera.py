@@ -1,10 +1,10 @@
 import cv2
 
-TEST_FILE_PATH = "test_images/IMG_1083.JPEG"
+TEST_FILE_PATH = "test_images/IMG_1097.JPEG"
 
 class Camera:
   def __init__(self, debug_mode=False):
-    self.video_source = 0  # Default to the first camera device
+    self.video_source = 1  # Default to the first camera device
     self.capture = None
     self.frame = None
     self.debug_mode = debug_mode
