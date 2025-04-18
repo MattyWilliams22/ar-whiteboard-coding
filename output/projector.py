@@ -11,12 +11,24 @@ class Projector:
     self.boxes = boxes
     self.boxes_scaled = boxes_scaled
     self.error_box = error_box
-    self.input_size = (self.image.shape[1], self.image.shape[0])
     self.output_size = output_size
     self.aruco_dict_type = aruco_dict_type
     self.aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
     self.marker_size = marker_size
     self.debug_mode = debug_mode
+
+  @property
+  def input_size(self):
+    if self.image is not None:
+        return (self.image.shape[1], self.image.shape[0])
+    return (1920,1080) # Default size if image is not set
+  
+  def update(self, image, python_code, code_output, boxes, error_box):
+    self.image = image
+    self.python_code = python_code
+    self.code_output = code_output
+    self.boxes = boxes
+    self.error_box = error_box
 
   def generate_aruco_marker(self, marker_id):
     marker_image = np.zeros((self.marker_size, self.marker_size), dtype=np.uint8)
@@ -35,15 +47,6 @@ class Projector:
     return scaled_boxes
   
   def display_bounding_boxes(self):
-    # Load or create a blank transparent image
-    if self.debug_mode == True:
-        self.output_image = cv2.resize(self.output_image, (self.output_size[0], self.output_size[1]))  # Resize to the target image size
-        # If the image is in BGR format, convert it to BGRA by adding an alpha channel
-        if self.output_image.shape[2] == 3:
-            self.output_image = cv2.cvtColor(self.output_image, cv2.COLOR_BGR2BGRA)
-    else:
-        self.output_image = np.zeros((self.output_size[1], self.output_size[0], 4), dtype=np.uint8)  # Transparent background
-
     # Generate random colors for each text label
     # colours = {text: (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255), 255) for _, text in self.boxes}
     # OR
@@ -59,13 +62,23 @@ class Projector:
         colour = colours[text]
         self.display_bounding_box(corners, colour, thickness=2)
 
+  def load_output_image(self):
+    # Load or create a blank transparent image
+    if self.debug_mode == True and self.image is not None:
+        self.output_image = cv2.resize(self.image, (self.output_size[0], self.output_size[1]))  # Resize to the target image size
+        # If the image is in BGR format, convert it to BGRA by adding an alpha channel
+        if self.output_image.shape[2] == 3:
+            self.output_image = cv2.cvtColor(self.output_image, cv2.COLOR_BGR2BGRA)
+    else:
+        self.output_image = np.full((self.output_size[1], self.output_size[0], 4), (255, 255, 255, 0), dtype=np.uint8)
+
   def display_corner_aruco_markers(self):
     # Define corner positions for the ArUco markers
     aruco_positions = [
-        (0, 0),
-        (self.output_size[0] - self.marker_size, 0),
-        (self.output_size[0] - self.marker_size, self.output_size[1] - self.marker_size),
-        (0, self.output_size[1] - self.marker_size)
+        (10, 10),
+        (self.output_size[0] - self.marker_size - 10, 10),
+        (self.output_size[0] - self.marker_size - 10, self.output_size[1] - self.marker_size - 10),
+        (10, self.output_size[1] - self.marker_size - 10)
     ]
     
     # Generate and place ArUco markers
@@ -261,8 +274,8 @@ class Projector:
     return py_box, out_box
   
   def display_full_projection(self):
-    # Reset image to original
-    self.output_image = self.image
+    # Reset output image
+    self.load_output_image()
 
     # Scale bounding boxes
     if not self.boxes_scaled:
@@ -290,14 +303,8 @@ class Projector:
     return self.output_image  
   
   def display_minimal_projection(self):
-    # Reset image to original
-    self.output_image = self.image
-
-    # Scale bounding boxes
-    if not self.boxes_scaled:
-        self.scale_bounding_boxes(self.boxes)
-        self.error_box = self.scale_bounding_boxes([(np.array(self.error_box), "")])[0][0] if self.error_box is not None else None
-        self.boxes_scaled = True
+    # Reset output_image
+    self.load_output_image()
 
     # Display the ArUco markers in the corners
     self.display_corner_aruco_markers()
@@ -306,4 +313,3 @@ class Projector:
   
   def set_image(self, image):
     self.image = image
-    self.input_size = (self.image.shape[1], self.image.shape[0])
