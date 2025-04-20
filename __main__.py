@@ -33,7 +33,7 @@ def process_image(image):
         return image, boxes, python_code, error_message, error_box
 
     executor = Executor(python_code)
-    code_output, error_message = executor.execute()
+    code_output, error_message = executor.execute_in_sandbox()
     if error_message is not None:
         return image, boxes, python_code, error_message, None
     if code_output is None:
