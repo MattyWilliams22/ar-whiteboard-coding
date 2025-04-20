@@ -5,8 +5,9 @@ from code_detection.ocr.paddleocr import detect_paddleocr_text
 from code_detection.markers.keywords import get_keyword
 
 class Detector:
-  def __init__(self, image, aruco_dict_type=cv2.aruco.DICT_6X6_50):
-    self.image = image
+  def __init__(self, aruco_image, ocr_image, aruco_dict_type=cv2.aruco.DICT_6X6_50):
+    self.aruco_image = aruco_image
+    self.ocr_image = ocr_image
     self.aruco_dict_type = aruco_dict_type
     self.text = None
     self.corners = None
@@ -40,26 +41,31 @@ class Detector:
       self.boxes.append((corners, text))
 
   def detect_code(self):
-    if self.image is None:
+    if self.aruco_image is None:
       return None, None
     
-    self.image, self.corners, self.ids = detect_aruco_markers(self.image, self.aruco_dict_type)
+    self.aruco_image, self.corners, self.ids = detect_aruco_markers(self.aruco_image, self.aruco_dict_type)
 
-    if self.image is None:
+    if self.aruco_image is None:
       print("Error: Marker detection failed")
       return None, None
 
-    mask = create_aruco_mask(self.image, self.corners)
+    mask = create_aruco_mask(self.ocr_image, self.corners)
 
-    self.image, self.text = detect_paddleocr_text(self.image, mask)
+    self.ocr_image, self.text = detect_paddleocr_text(self.ocr_image, mask)
 
-    if self.image is None:
+    if self.ocr_image is None:
       print("Error: Text detection failed")
       return None, None
 
     self.combine_markers_and_text()
 
-    return self.image, self.boxes
+    return self.aruco_image, self.ocr_image, self.boxes
   
-  def set_image(self, image):
-    self.image = image
+  def set_images(self, aruco_image, ocr_image):
+    self.aruco_image = aruco_image
+    self.ocr_image = ocr_image
+    self.text = None
+    self.corners = None
+    self.ids = None
+    self.boxes = None

@@ -13,33 +13,39 @@ PROJECT_IMAGE = True
 
 def process_image(image):
     preprocessor = Preprocessor(image)
-    image = preprocessor.preprocess_image()
-    if image is None:
-        return None, None, None, "Error: Preprocessing failed", None
+    aruco_image = preprocessor.preprocess_for_aruco()
+    if aruco_image is None:
+        return None, None, None, "Error: ArUco preprocessing failed", None
+    ocr_image = preprocessor.preprocess_for_ocr()
+    if ocr_image is None:
+        return None, None, None, "Error: OCR preprocessing failed", None
+    warped_image = preprocessor.get_warped_image()
+    if warped_image is None:
+        return None, None, None, "Error: Warping failed", None
 
-    detector = Detector(image)
-    image, boxes = detector.detect_code()
-    if image is None or boxes is None:
-        return image, boxes, None, "Error: Code detection failed", None
+    detector = Detector(aruco_image, ocr_image)
+    aruco_image, ocr_image, boxes = detector.detect_code()
+    if aruco_image is None or ocr_image is None or boxes is None:
+        return warped_image, boxes, None, "Error: Code detection failed", None
 
     tokeniser = Tokeniser(boxes)
     tokens = tokeniser.tokenise()
     if tokens is None:
-        return image, boxes, None, "Error: Tokenisation failed", None
+        return warped_image, boxes, None, "Error: Tokenisation failed", None
 
     parser = Parser(tokens)
     program, python_code, error_message, error_box = parser.parse()
     if program is None or python_code is None:
-        return image, boxes, python_code, error_message, error_box
+        return warped_image, boxes, python_code, error_message, error_box
 
     executor = Executor(python_code)
     code_output, error_message = executor.execute_in_sandbox()
     if error_message is not None:
-        return image, boxes, python_code, error_message, None
+        return warped_image, boxes, python_code, error_message, None
     if code_output is None:
-        return image, boxes, python_code, "Error: Code execution failed", None
+        return warped_image, boxes, python_code, "Error: Code execution failed", None
 
-    return image, boxes, python_code, code_output, error_box
+    return warped_image, boxes, python_code, code_output, error_box
 
 def run_code_from_frame(preview):
     # Display minimal projection first

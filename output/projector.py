@@ -36,6 +36,9 @@ class Projector:
     return marker_image
   
   def scale_bounding_boxes(self, boxes):
+    if boxes is None or len(boxes) == 0:
+        return boxes
+    
     scale_x = self.output_size[0] / self.input_size[0]
     scale_y = self.output_size[1] / self.input_size[1]
     
@@ -47,6 +50,9 @@ class Projector:
     return scaled_boxes
   
   def display_bounding_boxes(self):
+    if self.boxes is None or len(self.boxes) == 0:
+        return
+    
     # Generate random colors for each text label
     # colours = {text: (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255), 255) for _, text in self.boxes}
     # OR
@@ -140,10 +146,13 @@ class Projector:
     self.display_bounding_box(box, (0, 255, 0), thickness=2)
 
   def find_boxes(self):
-     # Find the markers for "Python Code:" and "Output:"
+    # Find the markers for "Python Code:" and "Output:"
     python_marker = None
     output_marker = None
     existing_boxes = []
+
+    if self.boxes is None or len(self.boxes) == 0:
+        return None, None
     
     for corners, text in self.boxes:
         if text == "Python Code:":
