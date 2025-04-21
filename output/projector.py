@@ -149,7 +149,7 @@ class Projector:
     self.display_bounding_box(box, (0, 255, 0), thickness=2)
 
   def find_boxes(self):
-    # Find the markers for "Python Code:" and "Output:"
+    # Find the markers for "PYTHON:" and "OUTPUT:"
     python_marker = None
     output_marker = None
     existing_boxes = []
@@ -158,9 +158,9 @@ class Projector:
         return None, None
     
     for corners, text in self.boxes:
-        if text == "Python Code:":
+        if text == "PYTHON:":
             python_marker = corners
-        elif text == "Output:":
+        elif text == "OUTPUT:":
             output_marker = corners
         existing_boxes.append(corners)
     

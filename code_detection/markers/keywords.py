@@ -5,43 +5,43 @@ CODE_MAX = 16
 def get_keyword(index):
     match index:
         case 0:
-            return "Function"
+            return "FUNCTION"
         case 1:
-            return "If"
+            return "IF"
         case 2:
-            return "Then"
+            return "THEN"
         case 3:
-            return "Else"
+            return "ELSE"
         case 4:
-            return "While"
+            return "WHILE"
         case 5:
-            return "Do"
+            return "DO"
         case 6:
-            return "For"
+            return "FOR"
         case 7:
-            return "Print"
+            return "PRINT"
         case 8:
-            return "Return"
+            return "RETURN"
         case 9:
-            return "Else If"
+            return "ELSE IF"
         case 10:
-            return "End"
+            return "END"
         case 11:
-            return "Take"
+            return "TAKE"
         case 12:
-            return "Call"
+            return "CALL"
         case 13:
-            return "With"
+            return "WITH"
         case 14:
-            return "From"
+            return "FROM"
         case 15:
-            return "To"
+            return "TO"
         case 16:
-            return "Str"
+            return "STR"
         case 44:
-            return "Python Code:"
+            return "PYTHON:"
         case 45:
-            return "Output:"
+            return "OUTPUT:"
         case 46:
             return "Bottom Left"
         case 47:

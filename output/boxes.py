@@ -153,15 +153,15 @@ def render_code_in_bbox(image, code, bbox, font_scale=0.6, font=cv2.FONT_HERSHEY
     return image
 
 def create_boxes(text_map, output_size=None):
-    # Find the markers for "Python Code:" and "Output:"
+    # Find the markers for "PYTHON:" and "OUTPUT:"
     python_marker = None
     output_marker = None
     existing_boxes = []
     
     for corners, text in text_map:
-        if text == "Python Code:":
+        if text == "PYTHON:":
             python_marker = corners
-        elif text == "Output:":
+        elif text == "OUTPUT:":
             output_marker = corners
         existing_boxes.append(corners)
     
