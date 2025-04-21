@@ -1,6 +1,5 @@
 import cv2
 import time
-from controller import Controller
 from input.camera_preview import CameraPreviewThread
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detector import Detector
@@ -13,19 +12,13 @@ PROJECT_IMAGE = True
 
 def process_image(image):
     preprocessor = Preprocessor(image)
-    aruco_image = preprocessor.preprocess_for_aruco()
-    if aruco_image is None:
-        return None, None, None, "Error: ArUco preprocessing failed", None
-    ocr_image = preprocessor.preprocess_for_ocr()
-    if ocr_image is None:
-        return None, None, None, "Error: OCR preprocessing failed", None
-    warped_image = preprocessor.get_warped_image()
+    warped_image = preprocessor.preprocess_image()
     if warped_image is None:
-        return None, None, None, "Error: Warping failed", None
+        return None, None, None, "Error: IMage preprocessing failed", None
 
-    detector = Detector(aruco_image, ocr_image)
-    aruco_image, ocr_image, boxes = detector.detect_code()
-    if aruco_image is None or ocr_image is None or boxes is None:
+    detector = Detector(warped_image)
+    warped_image, boxes = detector.detect_code()
+    if warped_image is None or boxes is None:
         return warped_image, boxes, None, "Error: Code detection failed", None
 
     tokeniser = Tokeniser(boxes)

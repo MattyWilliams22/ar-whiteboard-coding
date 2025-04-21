@@ -78,13 +78,16 @@ class Projector:
     else:
         self.output_image = np.full((self.output_size[1], self.output_size[0], 4), (255, 255, 255, 0), dtype=np.uint8)
 
-  def display_corner_aruco_markers(self):
+  def display_corner_aruco_markers(self, margin=0.01):
+    x_margin = int(self.output_size[0] * margin)
+    y_margin = int(self.output_size[1] * margin)
+
     # Define corner positions for the ArUco markers
     aruco_positions = [
-        (10, 10),
-        (self.output_size[0] - self.marker_size - 10, 10),
-        (self.output_size[0] - self.marker_size - 10, self.output_size[1] - self.marker_size - 10),
-        (10, self.output_size[1] - self.marker_size - 10)
+        (x_margin, y_margin),
+        (self.output_size[0] - self.marker_size - x_margin, y_margin),
+        (self.output_size[0] - self.marker_size - x_margin, self.output_size[1] - self.marker_size - y_margin),
+        (x_margin, self.output_size[1] - self.marker_size - y_margin)
     ]
     
     # Generate and place ArUco markers

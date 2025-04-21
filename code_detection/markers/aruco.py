@@ -78,7 +78,8 @@ def transform_bounding_boxes_simple(bboxes):
 
 # ArUco marker detection function
 def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary)
     aruco_params = cv2.aruco.DetectorParameters()
     corners, ids, _ = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
