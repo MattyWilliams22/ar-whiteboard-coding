@@ -3,3 +3,6 @@ paddleocr
 paddlepaddle
 setuptools
 docker
+SpeechRecognition
+PyAudio
+pvporcupine

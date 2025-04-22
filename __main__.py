@@ -1,12 +1,15 @@
 import cv2
 import time
 from input.camera_preview import CameraPreviewThread
+from input.voice_control import VoiceCommandListener
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detector import Detector
 from code_detection.tokeniser import Tokeniser
 from code_detection.parser import Parser
 from execution.executor import Executor
 from output.projector import Projector
+
+ACCESS_KEY = "duY+um2g68Nn2ctqSjm2QlIkmyaMRV2mRkgG4XmpjYHruBDK4AsWWw=="
 
 PROJECT_IMAGE = False
 
@@ -92,9 +95,34 @@ def run_code_from_frame(preview):
 
     return projection
 
+def handle_voice_command(command):
+    if "start" in command or "execute" in command:
+        print("Voice: Running code...")
+        projection = run_code_from_frame(preview)
+        if projection is not None:
+            cv2.imshow("Output", projection)
+    elif "clear" in command:
+        print("Voice: Returning to minimal projection.")
+        projector = Projector(None, None, None, None, None, debug_mode=False)
+        minimal = projector.display_minimal_projection()
+        if minimal is not None:
+            cv2.imshow("Output", minimal)
+    elif "exit" in command or "quit" in command:
+        print("Voice: Exiting...")
+        listener.stop()
+        preview.stop()
+        preview.join()
+        cv2.destroyAllWindows()
+        exit()
+
 def main():
+    global preview, listener
+
     preview = CameraPreviewThread(source=1, resolution=(3840, 2160), fps=10)
     preview.start()
+
+    listener = VoiceCommandListener(callback=handle_voice_command, access_key=ACCESS_KEY)
+    listener.start()
 
     cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Camera Feed", 1280, 720)
@@ -119,8 +147,10 @@ def main():
                     cv2.imshow("Output", projection)
 
     finally:
+        listener.stop()
         preview.stop()
         preview.join()
+        listener.join()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
