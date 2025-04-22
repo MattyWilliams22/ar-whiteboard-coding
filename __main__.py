@@ -10,8 +10,7 @@ from output.projector import Projector
 
 PROJECT_IMAGE = True
 
-def process_image(image):
-    preprocessor = Preprocessor(image)
+def process_image(preprocessor):
     warped_image = preprocessor.preprocess_image()
     if warped_image is None:
         return None, None, None, "Error: Image preprocessing failed", None
@@ -25,6 +24,7 @@ def process_image(image):
     tokens = tokeniser.tokenise()
     if tokens is None:
         return warped_image, boxes, None, "Error: Tokenisation failed", None
+    print(tokeniser.tokens_to_string())
 
     parser = Parser(tokens)
     program, python_code, error_message, error_box = parser.parse()
@@ -41,7 +41,6 @@ def process_image(image):
     return warped_image, boxes, python_code, code_output, error_box
 
 def run_code_from_frame(preview):
-    # Display minimal projection first
     projector = Projector(None, None, None, None, None, debug_mode=False)
     minimal_projection = projector.display_minimal_projection()
 
@@ -49,34 +48,42 @@ def run_code_from_frame(preview):
         print("Error: Minimal projection failed.")
         return None
 
-    # Show minimal projection
     cv2.imshow("Output", minimal_projection)
-    cv2.waitKey(1)  # Let window update
-
-    # Wait a short moment to ensure projection is visible (adjust if needed)
+    cv2.waitKey(1)
     time.sleep(1.0)
 
-    # Capture stable frame from preview
-    frame = None
-    for _ in range(10):
-        frame = preview.get_frame()
-        if frame is not None:
-            break
-        time.sleep(0.1)
+    max_attempts = 20
+    interval = 0.3
 
-    if frame is None:
-        print("Failed to get frame from preview.")
+    preprocessor = None
+
+    for attempt in range(max_attempts):
+        frame = preview.get_frame()
+        if frame is None:
+            time.sleep(interval)
+            continue
+
+        preprocessor = Preprocessor(frame)
+        warped_image = preprocessor.preprocess_image()
+
+        if warped_image is not None:
+            print(f"Valid frame captured on attempt {attempt + 1}")
+            break
+
+        print(f"Attempt {attempt + 1}/{max_attempts}: Not all corner markers detected.")
+        time.sleep(interval)
+
+    if preprocessor is None or warped_image is None:
+        print("Failed to detect all 4 corner markers after multiple attempts.")
         return None
 
-    # Process the image from camera
-    image, boxes, python_code, code_output, error_box = process_image(frame)
+    image, boxes, python_code, code_output, error_box = process_image(preprocessor)
 
     if python_code is None:
         python_code = "..."
     if code_output is None:
         code_output = "..."
 
-    # Show full projection
     projector = Projector(image, python_code, code_output, boxes, error_box, debug_mode=True)
     projection = projector.display_full_projection()
 
@@ -84,7 +91,6 @@ def run_code_from_frame(preview):
         cv2.imshow("Output", projection)
 
     return projection
-
 
 def main():
     preview = CameraPreviewThread(source=1, resolution=(3840, 2160), fps=10)
@@ -101,7 +107,6 @@ def main():
             if frame is not None:
                 cv2.imshow("Camera Feed", frame)
 
-            # Check if the Output window is closed
             if cv2.getWindowProperty("Output", cv2.WND_PROP_VISIBLE) < 1:
                 break
 
@@ -109,7 +114,6 @@ def main():
             if key == ord('q'):
                 break
             elif key == ord('r'):
-                # Run code processing on current frame
                 projection = run_code_from_frame(preview)
                 if projection is not None:
                     cv2.imshow("Output", projection)

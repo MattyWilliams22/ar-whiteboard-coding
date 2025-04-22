@@ -55,12 +55,18 @@ class Tokeniser:
             else:
                 merged_lines.append(line)
 
-        # Sort and append tokens to deque
+        # Sort lines top-to-bottom
+        merged_lines.sort(key=lambda line: np.mean([
+            (min(pt[1] for pt in box[1]) + max(pt[1] for pt in box[1])) / 2
+            for box in line
+        ]))
+
+        # Sort left-to-right and append to tokens
         for line in merged_lines:
-            line.sort(key=lambda item: min(point[0] for point in item[1]))
+            line.sort(key=lambda item: min(point[0] for point in item[1]))  # Sort by x
             for token in line:
                 tokens.append(token)
-            tokens.append(("LineBreak", []))  # Add LineBreak token between lines
+            tokens.append(("LineBreak", []))  # Separate lines
 
         self.tokens = tokens
 
