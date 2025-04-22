@@ -25,56 +25,53 @@ def transform_bounding_boxes(bboxs):
     
     return transformed_bboxs
 
-def transform_bounding_boxes_simple(bboxes):
+import numpy as np
+import cv2
+
+def transform_bounding_boxes_simple(bboxes, ignore=[]):
     ARUCO_COORDS = np.array([[-1, 1], [1, 1], [1, -1], [-1, -1]], dtype=np.float32)
     CARD_COORDS = np.array([[-1.3, 1.3], [8.2, 1.3], [8.2, -1.3], [-1.3, -1.3]], dtype=np.float32)
-    
-    transformed_bboxes = []
-    
-    for bbox in bboxes:
-        bbox = np.array(bbox, dtype=np.float32).reshape(4, 2)
-        
-        # Ensure bbox has the shape (4, 2) for four points (x, y)
-        if bbox.shape != (4, 2):
-            print(bbox.shape)
-            raise ValueError("Each bounding box must have 4 corner points (x, y).")
-        
-        # Calculate the width, height, and center of the original bounding box
-        min_x, min_y = np.min(bbox, axis=0)
-        max_x, max_y = np.max(bbox, axis=0)
-        
-        width = max_x - min_x
-        height = max_y - min_y
-        
-        # The side length of the new square bounding box is the maximum of width and height
-        side_length = max(width, height)
-        
-        # The center of the bounding box
-        center_x = (min_x + max_x) / 2
-        center_y = (min_y + max_y) / 2
-        
-        # Create a square bounding box with the center as the original center
-        half_side = side_length / 2
-        square_bbox = np.array([
-            [center_x - half_side, center_y + half_side],  # Top-left
-            [center_x + half_side, center_y + half_side],  # Top-right
-            [center_x + half_side, center_y - half_side],  # Bottom-right
-            [center_x - half_side, center_y - half_side]   # Bottom-left
-        ], dtype=np.float32)
-        
-        # Compute the transformation matrix from pixel coordinates to ARUCO_COORDS
-        transform_matrix = cv2.getPerspectiveTransform(square_bbox.reshape(4, 2), ARUCO_COORDS)
-        
-        # Compute the inverse transformation matrix
-        inverse_matrix = np.linalg.inv(transform_matrix)
-        
-        # Transform CARD_COORDS to new pixel coordinates
-        new_bbox = cv2.perspectiveTransform(CARD_COORDS.reshape(1, 4, 2), inverse_matrix)
-        
-        transformed_bboxes.append(new_bbox)
-    
-    return transformed_bboxes
 
+    transformed_bboxes = []
+
+    for index, bbox in enumerate(bboxes):
+        if index in ignore:
+            transformed_bboxes.append(bbox)
+            continue
+
+        bbox = np.array(bbox, dtype=np.float32).reshape(4, 2)
+        if bbox.shape != (4, 2):
+            raise ValueError("Each bounding box must have 4 corner points (x, y).")
+
+        top_vector = (bbox[1] - bbox[0]) / 2
+        bottom_vector = (bbox[2] - bbox[3]) / 2
+        # Calculate the average
+        horizontal_vector = (top_vector + bottom_vector) / 2
+
+
+        left_vector = (bbox[3] - bbox[0]) / 2
+        right_vector = (bbox[2] - bbox[1]) / 2
+        # Calculate the average
+        vertical_vector = (left_vector + right_vector) / 2
+
+        # Find the new corner points of the bounding box
+        top_left = bbox[0] - 0.3 * horizontal_vector - 0.3 * vertical_vector
+        top_right = top_left + 10 * horizontal_vector
+        bottom_left = top_left + 2.6 * vertical_vector
+        bottom_right = top_right + 2.6 * vertical_vector
+
+        # Construct the new bounding box
+        new_bbox = np.array([[
+            [top_left[0], top_left[1]],
+            [top_right[0], top_right[1]],
+            [bottom_right[0], bottom_right[1]],
+            [bottom_left[0], bottom_left[1]]
+        ]], dtype=np.float32)
+
+        # transformed_bboxes.append(new_bbox)
+        transformed_bboxes.append(new_bbox)
+
+    return transformed_bboxes
 
 # ArUco marker detection function
 def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
@@ -84,10 +81,12 @@ def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     aruco_params = cv2.aruco.DetectorParameters()
     corners, ids, _ = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
 
-    corners = transform_bounding_boxes_simple(corners)
-
-    # if ids is not None:
-    #     aruco.drawDetectedMarkers(image, corners, ids)
+    if ids is not None:
+        ignore = [i for i in range(len(ids)) if ids[i] in [46, 47, 48, 49]]
+    else:
+        ignore = []
+    corners = transform_bounding_boxes_simple(corners, ignore)
+    
     return image, corners, ids
 
 # Function to create a mask for ArUco markers

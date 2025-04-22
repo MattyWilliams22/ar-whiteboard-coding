@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import textwrap
+from code_detection.markers.keywords import ALL_KEYWORDS, ALL_CORNER_MARKERS
 
 class Projector:
   def __init__(self, image, python_code, code_output, boxes, error_box, output_size=(1280,790), aruco_dict_type=cv2.aruco.DICT_6X6_50, marker_size=35, boxes_scaled=False, debug_mode=False):
@@ -49,24 +50,30 @@ class Projector:
     
     return scaled_boxes
   
+  def get_colour(self, text):
+    if text in ALL_KEYWORDS:
+        return (0, 255, 255, 255) # Yellow for keywords
+    elif text in ALL_CORNER_MARKERS:
+        return (203, 255, 192, 255) # Pink for corner markers
+    elif text == "PYTHON:":
+        return (255, 0, 255, 255) # Purple for Python marker
+    elif text == "OUTPUT:":
+        return (50, 50, 50, 255) # Black for Output marker
+    else:
+        return (255, 255, 0, 255) # Light blue for other text
+  
   def display_bounding_boxes(self):
     if self.boxes is None or len(self.boxes) == 0:
         return
-    
-    # Generate random colors for each text label
-    # colours = {text: (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255), 255) for _, text in self.boxes}
-    # OR
-    # Use fixed colour for all boxes
-    colours = {text: (0, 255, 0, 255) for _, text in self.boxes}  # Green
   
     # Scale and draw each bounding box
     for corners, text in self.boxes:
-        # Ignore corner markers
-        if text in ["Top Left", "Top Right", "Bottom Left", "Bottom Right"]:
-            continue
+        # # Ignore corner markers
+        # if text in ["Top Left", "Top Right", "Bottom Left", "Bottom Right"]:
+        #     continue
 
-        colour = colours[text]
-        self.display_bounding_box(corners, colour, thickness=2)
+        colour = self.get_colour(text)
+        self.display_bounding_box(corners, colour, filled=True)
 
   def load_output_image(self):
     # Load or create a blank transparent image
@@ -101,10 +108,13 @@ class Projector:
         # Place the ArUco marker on the background (using BGRA format)
         self.output_image[pos[1]:pos[1]+self.marker_size, pos[0]:pos[0]+self.marker_size] = marker_bgra
 
-  def display_bounding_box(self, box, colour, thickness=2):
-    cv2.polylines(self.output_image, [box.astype(int)], isClosed=True, color=colour, thickness=thickness)
+  def display_bounding_box(self, box, colour, thickness=2, filled=False):
+    if filled:
+        cv2.fillPoly(self.output_image, [box.astype(int)], color=colour)
+    else:
+        cv2.polylines(self.output_image, [box.astype(int)], isClosed=True, color=colour, thickness=thickness)
 
-  def display_text_in_box(self, text, box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1):
+  def display_text_in_box(self, text, box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1, colour=(0, 0, 0, 255)):
     box = np.array(box, dtype=int)
 
     # Get bounding box dimensions
@@ -120,6 +130,10 @@ class Projector:
 
     for line in text_lines:
         leading_spaces = len(line) - len(line.lstrip(" "))
+        width = max_chars_per_line - leading_spaces
+        if width <= 0:
+            wrapped_lines.append(line)
+            continue
         wrapped = textwrap.wrap(line.lstrip(" "), width=max_chars_per_line - leading_spaces) or [""]
         wrapped = [(" " * leading_spaces) + w for w in wrapped]
         wrapped_lines.extend(wrapped)
@@ -146,7 +160,7 @@ class Projector:
         y_offset += line_height  # Move to the next line
 
     # Draw the bounding box
-    self.display_bounding_box(box, (0, 255, 0), thickness=2)
+    self.display_bounding_box(box, colour, thickness=2)
 
   def find_boxes(self):
     # Find the markers for "PYTHON:" and "OUTPUT:"
@@ -303,11 +317,11 @@ class Projector:
 
     # Render the Python code and output in their respective boxes
     if py_box is not None:
-        self.display_text_in_box(self.python_code, py_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1)
+        self.display_text_in_box(self.python_code, py_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1, colour=(255, 0, 255, 255))  # Purple for Python code
     if out_box is not None:
         self.display_text_in_box(self.code_output, out_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1)
     if self.error_box is not None:
-        self.display_bounding_box(self.error_box, (0, 0, 255), thickness=2)
+        self.display_bounding_box(self.error_box, (0, 0, 255), filled=True)  # Red for error box
 
     # Display the ArUco markers in the corners
     self.display_corner_aruco_markers()

@@ -1,6 +1,33 @@
 # Index of largest code marker ID
 CODE_MAX = 16
 
+ALL_KEYWORDS = {
+    "FUNCTION",
+    "IF",
+    "THEN",
+    "ELSE",
+    "WHILE",
+    "DO",
+    "FOR",
+    "PRINT",
+    "RETURN",
+    "ELSE IF",
+    "END",
+    "TAKE",
+    "CALL",
+    "WITH",
+    "FROM",
+    "TO",
+    "STR",
+}
+
+ALL_CORNER_MARKERS = {
+    "Bottom Left",
+    "Bottom Right",
+    "Top Right",
+    "Top Left",
+}
+
 # Function to map marker IDs to text
 def get_keyword(index):
     match index:

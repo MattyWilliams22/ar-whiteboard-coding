@@ -14,7 +14,7 @@ def process_image(image):
     preprocessor = Preprocessor(image)
     warped_image = preprocessor.preprocess_image()
     if warped_image is None:
-        return None, None, None, "Error: IMage preprocessing failed", None
+        return None, None, None, "Error: Image preprocessing failed", None
 
     detector = Detector(warped_image)
     warped_image, boxes = detector.detect_code()
