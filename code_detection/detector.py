@@ -22,6 +22,11 @@ class Detector:
         box, prediction = line  # Unpack the bounding box and text
         text, _ = prediction
 
+        if text == "PYTHON":
+          text = "PYTHON:"
+        elif text == "OUTPUT":
+          text = "OUTPUT:"
+
         startX, startY = int(box[0][0]), int(box[0][1])
         endX, endY = int(box[2][0]), int(box[2][1])
 

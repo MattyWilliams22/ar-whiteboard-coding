@@ -27,10 +27,10 @@ class Preprocessor:
     self.ids = ids
 
     src_points = self.get_corner_markers()
+    # if src_points is None:
+    #   src_points = self.get_outermost_markers()
     if src_points is None:
-      src_points = self.get_outermost_markers()
-    if src_points is None:
-      return None, "Error: Could not compute source points!"
+      return None, "Error: Could not find corner markers!"
 
     # Calculate width and height based on source points
     width_top = np.linalg.norm(src_points[0] - src_points[1])

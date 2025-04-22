@@ -8,7 +8,7 @@ from code_detection.parser import Parser
 from execution.executor import Executor
 from output.projector import Projector
 
-PROJECT_IMAGE = True
+PROJECT_IMAGE = False
 
 def process_image(preprocessor):
     warped_image = preprocessor.preprocess_image()
@@ -84,7 +84,7 @@ def run_code_from_frame(preview):
     if code_output is None:
         code_output = "..."
 
-    projector = Projector(image, python_code, code_output, boxes, error_box, debug_mode=True)
+    projector = Projector(image, python_code, code_output, boxes, error_box, debug_mode=PROJECT_IMAGE)
     projection = projector.display_full_projection()
 
     if projection is not None:
