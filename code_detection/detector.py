@@ -39,7 +39,7 @@ class Detector:
     return True
 
   @classmethod
-  def from_multiple_images(cls, images, aruco_dict_type=cv2.aruco.DICT_6X6_50):
+  def from_multiple_images(cls, images, aruco_dict_type=cv2.aruco.DICT_6X6_50, min_appearance_ratio=0.4):
     all_boxes = []
 
     for img in images:
@@ -64,7 +64,8 @@ class Detector:
         if not matched:
           all_boxes.append([candidate_corners, candidate_text, 1])
 
-    merged_boxes = [(corners, text) for corners, text, count in all_boxes]
+    threshold = max(1, int(min_appearance_ratio * len(images)))
+    merged_boxes = [(corners, text) for corners, text, count in all_boxes if count >= threshold]
     instance = cls(images[0], aruco_dict_type)
     instance.boxes = merged_boxes
     return instance
