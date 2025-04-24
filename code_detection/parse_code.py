@@ -287,8 +287,13 @@ def parse_call(tokens: deque, call_bounds):
         func_name, func_bounds = tokens.popleft()
         call_bounds = get_overall_bounds([call_bounds, func_bounds])
         next, next_bounds = tokens.popleft()
-        if next != "WITH":
-            raise Exception(f"Expected WITH after function name, found '{next}'")
+        call_bounds = get_overall_bounds([call_bounds, next_bounds])
+        if next != "WITH" and next != "LineBreak":
+            raise Exception(f"Expected WITH or New Line after function name, found '{next}'")
+        if next == "LineBreak":
+            stmt = Call(call_bounds, func_name, [])
+            print("Parsed call statement ", stmt.python_print())
+            return stmt, tokens, call_bounds, None
 
         args = ""
         next, next_bounds = tokens.popleft()
