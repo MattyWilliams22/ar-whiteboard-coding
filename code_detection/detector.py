@@ -1,123 +1,202 @@
 import cv2
 import numpy as np
-from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask, draw_aruco_keywords
+from collections import defaultdict
+from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask
 from code_detection.ocr.paddleocr import detect_paddleocr_text
 from code_detection.markers.keywords import get_keyword
 
+def compute_iou(box1, box2):
+    # Compute bounding rectangles from polygon boxes
+    rect1 = cv2.boundingRect(np.array(box1))
+    rect2 = cv2.boundingRect(np.array(box2))
+
+    x1, y1, w1, h1 = rect1
+    x2, y2, w2, h2 = rect2
+
+    xi1 = max(x1, x2)
+    yi1 = max(y1, y2)
+    xi2 = min(x1 + w1, x2 + w2)
+    yi2 = min(y1 + h1, y2 + h2)
+
+    inter_area = max(0, xi2 - xi1) * max(0, yi2 - yi1)
+    box1_area = w1 * h1
+    box2_area = w2 * h2
+
+    union_area = box1_area + box2_area - inter_area
+    if union_area == 0:
+        return 0
+    return inter_area / union_area
+
 class Detector:
-  def __init__(self, image=None, aruco_dict_type=cv2.aruco.DICT_6X6_50):
-    self.image = image
-    self.aruco_dict_type = aruco_dict_type
-    self.text = None
-    self.corners = None
-    self.ids = None
-    self.boxes = None
+    def __init__(self, images, aruco_dict_type=cv2.aruco.DICT_6X6_50):
+        self.images = images
+        self.aruco_dict_type = aruco_dict_type
+        self.all_boxes = []
 
-  @staticmethod
-  def compute_iou(box1, box2):
-    poly1 = cv2.convexHull(box1.astype(np.float32))
-    poly2 = cv2.convexHull(box2.astype(np.float32))
+    def detect_from_image(self, image):
+      image, aruco_corners, ids = detect_aruco_markers(image, self.aruco_dict_type)
+      if image is None:
+          return [], []
 
-    intersection_area = cv2.intersectConvexConvex(poly1, poly2)[0]
-    if intersection_area <= 0:
-      return 0.0
+      mask = create_aruco_mask(image, aruco_corners)
+      image, text = detect_paddleocr_text(image, mask)
 
-    area1 = cv2.contourArea(poly1)
-    area2 = cv2.contourArea(poly2)
-    union_area = area1 + area2 - intersection_area
+      boxes = []
 
-    return intersection_area / union_area if union_area > 0 else 0
+      if text and text[0]:
+          for line in text[0]:
+              box, prediction = line
+              text_val, _ = prediction
+              if text_val == "PYTHON":
+                  text_val = "PYTHON:"
+              elif text_val == "OUTPUT":
+                  text_val = "OUTPUT:"
+              startX, startY = int(box[0][0]), int(box[0][1])
+              endX, endY = int(box[2][0]), int(box[2][1])
+              corners = np.array([[startX, startY], [endX, startY], [endX, endY], [startX, endY]])
+              boxes.append((corners, text_val, 'ocr'))
 
-  @staticmethod
-  def is_contained(inner, outer):
-    inner_poly = cv2.convexHull(inner.astype(np.float32))
-    outer_poly = cv2.convexHull(outer.astype(np.float32))
+      if ids is not None:
+          for i in range(len(aruco_corners)):
+              marker_corners = aruco_corners[i][0]
+              box_corners = np.array([
+                  [marker_corners[0][0], marker_corners[0][1]],
+                  [marker_corners[1][0], marker_corners[1][1]], 
+                  [marker_corners[2][0], marker_corners[2][1]],
+                  [marker_corners[3][0], marker_corners[3][1]]
+              ])
+              text_val = get_keyword(ids[i][0])
+              boxes.append((box_corners, text_val, 'aruco'))
 
-    for point in inner_poly:
-      if cv2.pointPolygonTest(outer_poly, tuple(point[0]), False) < 0:
-        return False
-    return True
+      return boxes
 
-  @classmethod
-  def from_multiple_images(cls, images, aruco_dict_type=cv2.aruco.DICT_6X6_50, min_appearance_ratio=0.4):
-    all_boxes = []
+    def combine_boxes(self, all_detected_boxes, iou_threshold=0.5, containment_threshold=0.9, appearance_threshold=0.2):
+        # First, count how many times each text box appears across images
+        text_box_counts = defaultdict(int)
+        text_box_map = defaultdict(list)
+        
+        for box in all_detected_boxes:
+            if box[2] == 'ocr':  # Only count text boxes
+                # Convert box to a hashable format for counting
+                box_key = (tuple(map(tuple, box[0])), box[1])
+                text_box_counts[box_key] += 1
+                text_box_map[box_key].append(box)
+        
+        # Filter out text boxes that appear in less than appearance_threshold of images
+        total_images = len(self.images)
+        min_appearances = appearance_threshold * total_images
+        filtered_boxes = []
+        
+        for box in all_detected_boxes:
+            if box[2] == 'aruco':
+                filtered_boxes.append(box)  # Always accept aruco boxes
+            else:
+                box_key = (tuple(map(tuple, box[0])), box[1])
+                if text_box_counts[box_key] >= min_appearances:
+                    filtered_boxes.append(box)
+        
+        # Now process the filtered boxes
+        combined = []
+        processed_boxes = set()  # To track boxes we've already processed
+        
+        # First pass: identify text boxes that are >90% contained within aruco boxes
+        aruco_boxes = [box for box in filtered_boxes if box[2] == 'aruco']
+        ocr_boxes = [box for box in filtered_boxes if box[2] == 'ocr']
+        
+        boxes_to_remove = set()
+        
+        for aruco_box in aruco_boxes:
+            aruco_rect = cv2.boundingRect(np.array(aruco_box[0]))
+            
+            for ocr_box in ocr_boxes:
+                ocr_rect = cv2.boundingRect(np.array(ocr_box[0]))
+                
+                # Calculate containment
+                x1, y1, w1, h1 = aruco_rect
+                x2, y2, w2, h2 = ocr_rect
+                
+                # Area of intersection
+                xi1 = max(x1, x2)
+                yi1 = max(y1, y2)
+                xi2 = min(x1 + w1, x2 + w2)
+                yi2 = min(y1 + h1, y2 + h2)
+                inter_area = max(0, xi2 - xi1) * max(0, yi2 - yi1)
+                
+                # Area of OCR box
+                ocr_area = w2 * h2
+                
+                if ocr_area > 0 and (inter_area / ocr_area) > containment_threshold:
+                    # Mark this OCR box for removal
+                    box_key = (tuple(map(tuple, ocr_box[0])), ocr_box[1])
+                    boxes_to_remove.add(box_key)
+        
+        # Second pass: combine boxes with similar IoU
+        remaining_boxes = [box for box in filtered_boxes 
+                          if box[2] == 'aruco' or 
+                          (tuple(map(tuple, box[0])), box[1]) not in boxes_to_remove]
+        
+        while remaining_boxes:
+            ref_box = remaining_boxes.pop(0)
+            ref_key = (tuple(map(tuple, ref_box[0])), ref_box[1])
+            
+            if ref_key in processed_boxes:
+                continue
+                
+            group = [ref_box]
+            processed_boxes.add(ref_key)
+            
+            to_remove = []
+            for i, box in enumerate(remaining_boxes):
+                box_key = (tuple(map(tuple, box[0])), box[1])
+                
+                if box_key in processed_boxes:
+                    continue
+                    
+                if compute_iou(ref_box[0], box[0]) >= iou_threshold:
+                    group.append(box)
+                    processed_boxes.add(box_key)
+                    to_remove.append(i)
+            
+            for i in reversed(to_remove):
+                remaining_boxes.pop(i)
+            
+            # Priority to aruco
+            aruco_boxes_in_group = [b for b in group if b[2] == 'aruco']
+            if aruco_boxes_in_group:
+                # Use the first ArUco box and ensure it's only added once
+                combined.append((aruco_boxes_in_group[0][0], aruco_boxes_in_group[0][1]))
+            else:
+                # For text boxes, use the most common one in the group
+                text_counts = defaultdict(int)
+                for _, text, _ in group:
+                    text_counts[text] += 1
+                most_common = max(text_counts.items(), key=lambda x: x[1])[0]
+                combined.append((ref_box[0], most_common))
+        
+        # Remove any exact duplicates that might remain
+        unique_combined = []
+        seen = set()
+        
+        for box in combined:
+            box_key = (tuple(map(tuple, box[0])), box[1])
+            if box_key not in seen:
+                seen.add(box_key)
+                unique_combined.append(box)
+        
+        return unique_combined
 
-    for img in images:
-      detector = cls(img, aruco_dict_type)
-      detector.detect_code()
+    def detect_code(self):
+        if not self.images:
+            print("Error: No images provided")
+            return None, None
 
-      for candidate_corners, candidate_text in detector.boxes:
-        matched = False
-        for existing in all_boxes:
-          existing_corners, existing_text, existing_count = existing
+        all_detected_boxes = []
+        for img in self.images:
+            boxes = self.detect_from_image(img)
+            all_detected_boxes.extend(boxes)
 
-          if (cls.is_contained(candidate_corners, existing_corners) or
-              cls.is_contained(existing_corners, candidate_corners) or
-              cls.compute_iou(candidate_corners, existing_corners) > 0.2):
-            if "ARUCO" in candidate_text.upper():
-              existing[0] = candidate_corners
-              existing[1] = candidate_text
-            existing[2] += 1
-            matched = True
-            break
+        final_boxes = self.combine_boxes(all_detected_boxes)
+        return self.images[0], final_boxes  # Return one of the processed images and combined boxes
 
-        if not matched:
-          all_boxes.append([candidate_corners, candidate_text, 1])
-
-    threshold = max(1, int(min_appearance_ratio * len(images)))
-    merged_boxes = [(corners, text) for corners, text, count in all_boxes if count >= threshold]
-    instance = cls(images[0], aruco_dict_type)
-    instance.boxes = merged_boxes
-    return instance
-
-  def combine_markers_and_text(self):
-    self.boxes = []
-
-    if self.text[0] is not None:
-      for line in self.text[0]:
-        box, prediction = line
-        text, _ = prediction
-
-        if text == "PYTHON":
-          text = "PYTHON:"
-        elif text == "OUTPUT":
-          text = "OUTPUT:"
-
-        startX, startY = int(box[0][0]), int(box[0][1])
-        endX, endY = int(box[2][0]), int(box[2][1])
-
-        corners = np.array([[startX, startY], [endX, startY], [endX, endY], [startX, endY]])
-
-        self.boxes.append((corners, text))
-
-    for i in range(len(self.corners)):
-      box = self.corners[i][0]
-      corners = np.array([[box[0][0], box[0][1]], [box[1][0], box[1][1]], 
-                          [box[2][0], box[2][1]], [box[3][0], box[3][1]]])
-      text = get_keyword(self.ids[i][0])
-      self.boxes.append((corners, text))
-
-  def detect_code(self):
-    if self.image is None:
-      return None, None
-
-    self.image, self.corners, self.ids = detect_aruco_markers(self.image, self.aruco_dict_type)
-    if self.image is None:
-      print("Error: Marker detection failed")
-      return None, None
-
-    mask = create_aruco_mask(self.image, self.corners)
-    self.image, self.text = detect_paddleocr_text(self.image, mask)
-    if self.image is None:
-      print("Error: Text detection failed")
-      return None, None
-
-    self.combine_markers_and_text()
-    return self.image, self.boxes
-
-  def set_images(self, image):
-    self.image = image
-    self.text = None
-    self.corners = None
-    self.ids = None
-    self.boxes = None
+    def set_images(self, images):
+        self.images = images
