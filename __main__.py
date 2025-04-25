@@ -1,7 +1,7 @@
 import cv2
 import time
 from input.camera_preview import CameraPreviewThread
-from input.voice_control import VoiceCommandListener
+from input.voice_control import VoiceCommandListener  # ✅ Uses updated implementation
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detector import Detector
 from code_detection.tokeniser import Tokeniser
@@ -10,7 +10,6 @@ from execution.executor import Executor
 from output.projector import Projector
 
 ACCESS_KEY = "duY+um2g68Nn2ctqSjm2QlIkmyaMRV2mRkgG4XmpjYHruBDK4AsWWw=="
-
 PROJECT_IMAGE = False
 
 def process_image(preprocessor):
@@ -59,6 +58,7 @@ def run_code_from_frame(preview):
     interval = 0.3
 
     preprocessor = None
+    warped_image = None
 
     for attempt in range(max_attempts):
         frame = preview.get_frame()
@@ -112,6 +112,7 @@ def handle_voice_command(command):
         listener.stop()
         preview.stop()
         preview.join()
+        listener.join()
         cv2.destroyAllWindows()
         exit()
 
@@ -148,9 +149,9 @@ def main():
 
     finally:
         listener.stop()
+        listener.join()
         preview.stop()
         preview.join()
-        listener.join()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
