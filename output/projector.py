@@ -321,7 +321,7 @@ class Projector:
     if out_box is not None:
         self.display_text_in_box(self.code_output, out_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1)
     if self.error_box is not None:
-        self.display_bounding_box(self.error_box, (0, 0, 255), filled=True)  # Red for error box
+        self.display_bounding_box(self.error_box, (0, 0, 255, 255), filled=True)  # Red for error box
 
     # Display the ArUco markers in the corners
     self.display_corner_aruco_markers()
