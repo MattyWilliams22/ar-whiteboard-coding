@@ -9,13 +9,35 @@ from execution.executor import Executor
 from output.projector import Projector
 
 PROJECT_IMAGE = False
+NUM_VALID_IMAGES = 5  # Number of valid images used for voting
 
-def process_image(preprocessor):
-    warped_image = preprocessor.preprocess_image()
-    if warped_image is None:
-        return None, None, None, "Error: Image preprocessing failed", None
+def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
+    valid_images = []
+    attempts = 0
 
-    detector = Detector(warped_image)
+    while len(valid_images) < num_required and attempts < max_attempts:
+        frame = preview.get_frame()
+        if frame is None:
+            time.sleep(interval)
+            attempts += 1
+            continue
+
+        preprocessor = Preprocessor(frame)
+        warped_image = preprocessor.preprocess_image()
+
+        if warped_image is not None:
+            valid_images.append(warped_image)
+            print(f"Captured valid image {len(valid_images)} of {num_required}")
+        else:
+            print(f"Attempt {attempts + 1}/{max_attempts}: Not all corner markers detected.")
+        
+        attempts += 1
+        time.sleep(interval)
+
+    return valid_images
+
+def process_images(warped_images):
+    detector = Detector(warped_images)
     warped_image, boxes = detector.detect_code()
     if warped_image is None or boxes is None:
         return warped_image, boxes, None, "Error: Code detection failed", None
@@ -52,32 +74,12 @@ def run_code_from_frame(preview):
     cv2.waitKey(1)
     time.sleep(1.0)
 
-    max_attempts = 20
-    interval = 0.3
-
-    preprocessor = None
-
-    for attempt in range(max_attempts):
-        frame = preview.get_frame()
-        if frame is None:
-            time.sleep(interval)
-            continue
-
-        preprocessor = Preprocessor(frame)
-        warped_image = preprocessor.preprocess_image()
-
-        if warped_image is not None:
-            print(f"Valid frame captured on attempt {attempt + 1}")
-            break
-
-        print(f"Attempt {attempt + 1}/{max_attempts}: Not all corner markers detected.")
-        time.sleep(interval)
-
-    if preprocessor is None or warped_image is None:
-        print("Failed to detect all 4 corner markers after multiple attempts.")
+    valid_images = collect_valid_images(preview, NUM_VALID_IMAGES)
+    if len(valid_images) < NUM_VALID_IMAGES:
+        print("Insufficient valid images collected.")
         return None
 
-    image, boxes, python_code, code_output, error_box = process_image(preprocessor)
+    image, boxes, python_code, code_output, error_box = process_images(valid_images)
 
     if python_code is None:
         python_code = "..."
