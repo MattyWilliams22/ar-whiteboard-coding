@@ -7,9 +7,9 @@ from code_detection.tokeniser import Tokeniser
 from code_detection.parser import Parser
 from execution.executor import Executor
 from output.projector import Projector
+from input.settings_menu import open_settings_menu
+from settings import settings, load_settings
 
-PROJECT_IMAGE = False
-NUM_VALID_IMAGES = 5  # Number of valid images used for voting
 
 def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
     valid_images = []
@@ -35,6 +35,7 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
         time.sleep(interval)
 
     return valid_images
+
 
 def process_images(warped_images):
     detector = Detector(warped_images)
@@ -62,8 +63,12 @@ def process_images(warped_images):
 
     return warped_image, boxes, python_code, code_output, error_box
 
+
 def run_code_from_frame(preview):
-    projector = Projector(None, None, None, None, None, debug_mode=False)
+    projector = Projector(None, None, None, None, None,
+                          output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                          marker_size=settings["CORNER_MARKER_SIZE"],
+                          debug_mode=False)
     minimal_projection = projector.display_minimal_projection()
 
     if minimal_projection is None:
@@ -74,8 +79,8 @@ def run_code_from_frame(preview):
     cv2.waitKey(1)
     time.sleep(1.0)
 
-    valid_images = collect_valid_images(preview, NUM_VALID_IMAGES)
-    if len(valid_images) < NUM_VALID_IMAGES:
+    valid_images = collect_valid_images(preview, settings["NUM_VALID_IMAGES"])
+    if len(valid_images) < settings["NUM_VALID_IMAGES"]:
         print("Insufficient valid images collected.")
         return None
 
@@ -86,7 +91,10 @@ def run_code_from_frame(preview):
     if code_output is None:
         code_output = "..."
 
-    projector = Projector(image, python_code, code_output, boxes, error_box, debug_mode=PROJECT_IMAGE)
+    projector = Projector(image, python_code, code_output, boxes, error_box,
+                          output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                          marker_size=settings["CORNER_MARKER_SIZE"],
+                          debug_mode=settings["PROJECT_IMAGE"])
     projection = projector.display_full_projection()
 
     if projection is not None:
@@ -94,8 +102,13 @@ def run_code_from_frame(preview):
 
     return projection
 
+
 def main():
-    preview = CameraPreviewThread(source=1, resolution=(3840, 2160), fps=10)
+    preview = CameraPreviewThread(
+        source=settings["CAMERA"],
+        resolution=tuple(settings["CAMERA_RESOLUTION"]),
+        fps=settings["CAMERA_FPS"]
+    )
     preview.start()
 
     cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
@@ -119,11 +132,16 @@ def main():
                 projection = run_code_from_frame(preview)
                 if projection is not None:
                     cv2.imshow("Output", projection)
+            elif key == ord('s'):
+                print("Opening settings menu...")
+                open_settings_menu()
+                load_settings()
 
     finally:
         preview.stop()
         preview.join()
         cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
