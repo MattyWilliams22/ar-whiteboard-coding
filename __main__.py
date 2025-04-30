@@ -1,7 +1,10 @@
 import cv2
 import time
+import signal
+import sys
+
 from input.camera_preview import CameraPreviewThread
-from input.voice_control import VoiceCommandListener  # ✅ Uses updated implementation
+from input.voice_control import VoiceCommandListener
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detector import Detector
 from code_detection.tokeniser import Tokeniser
@@ -11,6 +14,23 @@ from output.projector import Projector
 
 ACCESS_KEY = "duY+um2g68Nn2ctqSjm2QlIkmyaMRV2mRkgG4XmpjYHruBDK4AsWWw=="
 PROJECT_IMAGE = False
+
+# Globals for clean shutdown
+listener = None
+preview = None
+
+def shutdown_handler(sig, frame):
+    print("\n🛑 Ctrl+C detected. Shutting down...")
+    if listener:
+        listener.stop()
+        listener.join()
+    if preview:
+        preview.stop()
+        preview.join()
+    cv2.destroyAllWindows()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, shutdown_handler)  # Handle Ctrl+C
 
 def process_image(preprocessor):
     warped_image = preprocessor.preprocess_image()
@@ -109,12 +129,7 @@ def handle_voice_command(command):
             cv2.imshow("Output", minimal)
     elif "exit" in command or "quit" in command:
         print("Voice: Exiting...")
-        listener.stop()
-        preview.stop()
-        preview.join()
-        listener.join()
-        cv2.destroyAllWindows()
-        exit()
+        shutdown_handler(None, None)
 
 def main():
     global preview, listener
@@ -147,12 +162,11 @@ def main():
                 if projection is not None:
                     cv2.imshow("Output", projection)
 
+    except KeyboardInterrupt:
+        shutdown_handler(None, None)
+
     finally:
-        listener.stop()
-        listener.join()
-        preview.stop()
-        preview.join()
-        cv2.destroyAllWindows()
+        shutdown_handler(None, None)
 
 if __name__ == "__main__":
     main()
