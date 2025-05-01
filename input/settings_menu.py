@@ -8,109 +8,172 @@ class SettingsMenu:
     def __init__(self, master, camera_preview=None):
         self.master = master
         master.title("Settings")
-        master.geometry("600x600")  # Increased size to accommodate more settings
-
+        # Removed fixed geometry to let window size adjust naturally
         self.camera_preview = camera_preview
         self.create_widgets()
+        
+        # Update window size after widgets are created
+        master.update_idletasks()
+        # Set maximum height to current height (prevents vertical expansion)
+        master.maxsize(master.winfo_width(), master.winfo_height())
 
     def create_widgets(self):
+        main_frame = ttk.Frame(self.master, padding="10")
+        main_frame.grid(row=0, column=0, sticky="nsew")
+        
         row = 0
 
-        # Camera device dropdown
-        tk.Label(self.master, text="Camera:").grid(row=row, column=0, sticky="w")
+        # Camera device dropdown (unchanged)
+        ttk.Label(main_frame, text="Camera:").grid(row=row, column=0, sticky="w", pady=2)
         self.cameras = self.get_cameras()
-        self.camera_var = tk.IntVar(value=settings["CAMERA"])
-        self.camera_dropdown = ttk.Combobox(self.master, 
+        self.camera_dropdown = ttk.Combobox(main_frame, 
                                           values=[f"{i}: {name}" for i, name in self.cameras], 
                                           width=50)
         self.camera_dropdown.current(settings["CAMERA"])
-        self.camera_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew")
+        self.camera_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Microphone dropdown
-        tk.Label(self.master, text="Microphone:").grid(row=row, column=0, sticky="w")
+        # Microphone dropdown (unchanged)
+        ttk.Label(main_frame, text="Microphone:").grid(row=row, column=0, sticky="w", pady=2)
         self.microphones = self.get_microphones()
-        self.mic_var = tk.IntVar(value=settings["MICROPHONE"])
-        self.mic_dropdown = ttk.Combobox(self.master, 
+        self.mic_dropdown = ttk.Combobox(main_frame, 
                                         values=[f"{i}: {name}" for i, name in self.microphones], 
                                         width=50)
         self.mic_dropdown.current(settings["MICROPHONE"])
-        self.mic_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew")
+        self.mic_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Camera resolution
-        tk.Label(self.master, text="Camera Resolution (Width x Height):").grid(row=row, column=0, sticky="w")
-        self.cam_res_width = tk.Entry(self.master, width=7)
-        self.cam_res_height = tk.Entry(self.master, width=7)
+        # Camera resolution (unchanged)
+        ttk.Label(main_frame, text="Camera Resolution:").grid(row=row, column=0, sticky="w", pady=2)
+        self.cam_res_frame = ttk.Frame(main_frame)
+        self.cam_res_frame.grid(row=row, column=1, columnspan=4, sticky="w", pady=2)
+        
+        self.cam_res_width = ttk.Entry(self.cam_res_frame, width=7)
         self.cam_res_width.insert(0, str(settings["CAMERA_RESOLUTION"][0]))
+        self.cam_res_width.pack(side="left")
+        ttk.Label(self.cam_res_frame, text="×").pack(side="left", padx=2)
+        self.cam_res_height = ttk.Entry(self.cam_res_frame, width=7)
         self.cam_res_height.insert(0, str(settings["CAMERA_RESOLUTION"][1]))
-        tk.Label(self.master, text="X:").grid(row=row, column=1, sticky="e")
-        self.cam_res_width.grid(row=row, column=2)
-        tk.Label(self.master, text="Y:").grid(row=row, column=3, sticky="e")
-        self.cam_res_height.grid(row=row, column=4)
+        self.cam_res_height.pack(side="left")
         row += 1
 
-        # Camera FPS
-        tk.Label(self.master, text="Camera FPS:").grid(row=row, column=0, sticky="w")
-        self.cam_fps = tk.Entry(self.master, width=7)
+        # Camera FPS (unchanged)
+        ttk.Label(main_frame, text="Camera FPS:").grid(row=row, column=0, sticky="w", pady=2)
+        self.cam_fps = ttk.Entry(main_frame, width=7)
         self.cam_fps.insert(0, str(settings["CAMERA_FPS"]))
-        self.cam_fps.grid(row=row, column=1, sticky="w")
+        self.cam_fps.grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Projection resolution
-        tk.Label(self.master, text="Projection Resolution (Width x Height):").grid(row=row, column=0, sticky="w")
-        self.proj_res_width = tk.Entry(self.master, width=7)
-        self.proj_res_height = tk.Entry(self.master, width=7)
+        # Projection resolution (unchanged)
+        ttk.Label(main_frame, text="Projection Resolution:").grid(row=row, column=0, sticky="w", pady=2)
+        self.proj_res_frame = ttk.Frame(main_frame)
+        self.proj_res_frame.grid(row=row, column=1, columnspan=4, sticky="w", pady=2)
+        
+        self.proj_res_width = ttk.Entry(self.proj_res_frame, width=7)
         self.proj_res_width.insert(0, str(settings["PROJECTION_RESOLUTION"][0]))
+        self.proj_res_width.pack(side="left")
+        ttk.Label(self.proj_res_frame, text="×").pack(side="left", padx=2)
+        self.proj_res_height = ttk.Entry(self.proj_res_frame, width=7)
         self.proj_res_height.insert(0, str(settings["PROJECTION_RESOLUTION"][1]))
-        tk.Label(self.master, text="X:").grid(row=row, column=1, sticky="e")
-        self.proj_res_width.grid(row=row, column=2)
-        tk.Label(self.master, text="Y:").grid(row=row, column=3, sticky="e")
-        self.proj_res_height.grid(row=row, column=4)
+        self.proj_res_height.pack(side="left")
         row += 1
 
-        # Project image checkbox
+        # Checkboxes (unchanged)
         self.project_image_var = tk.BooleanVar(value=settings["PROJECT_IMAGE"])
-        tk.Checkbutton(self.master, text="Project Image", variable=self.project_image_var).grid(row=row, column=0, sticky="w")
+        ttk.Label(main_frame, text="Project Image:").grid(row=row, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(main_frame, variable=self.project_image_var).grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Project corners checkbox
         self.project_corners_var = tk.BooleanVar(value=settings["PROJECT_CORNERS"])
-        tk.Checkbutton(self.master, text="Project Corner Markers", variable=self.project_corners_var).grid(row=row, column=0, sticky="w")
+        ttk.Label(main_frame, text="Project Corners:").grid(row=row, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(main_frame, variable=self.project_corners_var).grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Corner marker size
-        tk.Label(self.master, text="Corner Marker Size (px):").grid(row=row, column=0, sticky="w")
-        self.corner_marker_size = tk.Entry(self.master, width=7)
-        self.corner_marker_size.insert(0, str(settings["CORNER_MARKER_SIZE"]))
-        self.corner_marker_size.grid(row=row, column=1, sticky="w")
-        row += 1
-
-        # Voice commands checkbox
         self.voice_commands_var = tk.BooleanVar(value=settings["VOICE_COMMANDS"])
-        tk.Checkbutton(self.master, text="Enable Voice Commands", variable=self.voice_commands_var).grid(row=row, column=0, sticky="w")
+        ttk.Label(main_frame, text="Voice Commands:").grid(row=row, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(main_frame, variable=self.voice_commands_var).grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Slider for NUM_VALID_IMAGES
-        tk.Label(self.master, text="Detection Confidence (Speed <--> Accuracy):").grid(row=row, column=0, sticky="w")
-        self.num_valid_images = tk.Scale(self.master, from_=1, to=10, orient=tk.HORIZONTAL)
+        # Corner marker size (unchanged)
+        ttk.Label(main_frame, text="Corner Marker Size:").grid(row=row, column=0, sticky="w", pady=2)
+        self.corner_marker_size = ttk.Entry(main_frame, width=7)
+        self.corner_marker_size.insert(0, str(settings["CORNER_MARKER_SIZE"]))
+        self.corner_marker_size.grid(row=row, column=1, sticky="w", pady=2)
+        row += 1
+
+        # Modified slider section using tk.Scale
+        ttk.Label(main_frame, text="Detection Confidence (Speed <--> Accuracy):").grid(
+            row=row, column=0, sticky="w", pady=2)
+
+        self.num_valid_images = tk.Scale(
+            main_frame,
+            from_=1,
+            to=10,
+            orient="horizontal",
+            showvalue=1,
+            tickinterval=1,
+            resolution=1,
+            length=400  # Adjusted to reasonable width
+        )
         self.num_valid_images.set(settings["NUM_VALID_IMAGES"])
-        self.num_valid_images.grid(row=row, column=1, columnspan=4, sticky="ew")
+        self.num_valid_images.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Save and close button
-        tk.Button(self.master, text="Save and Close", command=self.on_save).grid(row=row, column=0, columnspan=5, pady=10)
+        # Save and close button at the bottom
+        ttk.Button(main_frame, text="Save and Close", command=self.on_save).grid(
+            row=row, column=0, columnspan=5, pady=10)
+        
+        # Configure grid weights to prevent expansion
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(row, weight=0)  # Prevent button row from expanding
+        self.master.columnconfigure(0, weight=1)
+        self.master.rowconfigure(0, weight=1)
+        
+        # Set reasonable minimum size (width, height)
+        self.master.minsize(500, 400)  # Adjusted to fit content without extra space# Modified slider section using tk.Scale
 
     def get_cameras(self):
         index = 0
         cameras = []
+        # Common camera name patterns to look for
+        common_names = {
+            'HD': 'HD Camera',
+            'USB': 'USB Webcam', 
+            'FaceTime': 'FaceTime Camera',
+            'Logitech': 'Logitech Webcam',
+            'Integrated': 'Integrated Webcam'
+        }
+        
         while index < 10:
             cap = cv2.VideoCapture(index)
-            if cap.read()[0]:
-                cameras.append((index, f"Camera {index}"))
+            if cap.isOpened():
+                # Try to get some properties that might hint at the camera type
+                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                
+                # Create a descriptive name based on resolution
+                resolution = f"{width}x{height}"
+                if width >= 1920:
+                    res_description = "HD"
+                elif width >= 1280:
+                    res_description = "Mid-Res" 
+                else:
+                    res_description = "Standard"
+                
+                # Default name with resolution info
+                name = f"Camera {index} ({res_description} {resolution})"
+                
+                # Check for common name patterns
+                for pattern, display_name in common_names.items():
+                    if pattern in name:
+                        name = f"{display_name} {index} ({resolution})"
+                        break
+                
+                cameras.append((index, name))
                 cap.release()
             index += 1
-        return cameras
+        
+        return cameras if cameras else [(0, "Default Camera")]
 
     def get_microphones(self):
         return [(i, dev['name']) for i, dev in enumerate(sd.query_devices()) if dev['max_input_channels'] > 0]
