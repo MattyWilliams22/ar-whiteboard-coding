@@ -7,9 +7,9 @@ from code_detection.tokeniser import Tokeniser
 from code_detection.parser import Parser
 from execution.executor import Executor
 from output.projector import Projector
-from input.settings_menu import open_settings_menu
+from input.settings_menu import SettingsMenu
 from settings import settings, load_settings
-
+import tkinter as tk
 
 def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
     valid_images = []
@@ -103,7 +103,19 @@ def run_code_from_frame(preview):
     return projection
 
 
+def show_settings_menu():
+    """Show settings menu and wait for user to save settings"""
+    root = tk.Tk()
+    app = SettingsMenu(root, None)  # No preview needed initially
+    root.mainloop()
+    load_settings()  # Reload settings after menu closes
+
+
 def main():
+    # Show settings menu first
+    show_settings_menu()
+
+    # Now initialize everything with the selected settings
     preview = CameraPreviewThread(
         source=settings["CAMERA"],
         resolution=tuple(settings["CAMERA_RESOLUTION"]),
@@ -134,8 +146,13 @@ def main():
                     cv2.imshow("Output", projection)
             elif key == ord('s'):
                 print("Opening settings menu...")
-                open_settings_menu()
-                load_settings()
+                show_settings_menu()
+                # Update preview with new settings
+                preview.update_settings(
+                    source=settings["CAMERA"],
+                    resolution=tuple(settings["CAMERA_RESOLUTION"]),
+                    fps=settings["CAMERA_FPS"]
+                )
 
     finally:
         preview.stop()

@@ -6,9 +6,9 @@
         1920,
         1080
     ],
-    "CAMERA_FPS": 10,
+    "CAMERA_FPS": 20,
     "VOICE_COMMANDS": false,
-    "MICROPHONE": 0,
+    "MICROPHONE": 2,
     "PROJECTION_RESOLUTION": [
         1280,
         790
