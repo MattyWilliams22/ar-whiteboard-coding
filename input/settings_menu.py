@@ -1,3 +1,4 @@
+import messagebox
 import tkinter as tk
 from tkinter import ttk
 import sounddevice as sd
@@ -23,7 +24,7 @@ class SettingsMenu:
         
         row = 0
 
-        # Camera device dropdown (unchanged)
+        # Camera device dropdown
         ttk.Label(main_frame, text="Camera:").grid(row=row, column=0, sticky="w", pady=2)
         self.cameras = self.get_cameras()
         self.camera_dropdown = ttk.Combobox(main_frame, 
@@ -33,7 +34,7 @@ class SettingsMenu:
         self.camera_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Microphone dropdown (unchanged)
+        # Microphone dropdown
         ttk.Label(main_frame, text="Microphone:").grid(row=row, column=0, sticky="w", pady=2)
         self.microphones = self.get_microphones()
         self.mic_dropdown = ttk.Combobox(main_frame, 
@@ -43,18 +44,27 @@ class SettingsMenu:
         self.mic_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Camera resolution (unchanged)
+        # Camera resolution
         ttk.Label(main_frame, text="Camera Resolution:").grid(row=row, column=0, sticky="w", pady=2)
         self.cam_res_frame = ttk.Frame(main_frame)
         self.cam_res_frame.grid(row=row, column=1, columnspan=4, sticky="w", pady=2)
         
-        self.cam_res_width = ttk.Entry(self.cam_res_frame, width=7)
+        # Add validation commands
+        vcmd = (self.master.register(self.validate_resolution), '%P', 'camera')
+        
+        self.cam_res_width = ttk.Entry(self.cam_res_frame, width=7, validate="key", validatecommand=vcmd)
         self.cam_res_width.insert(0, str(settings["CAMERA_RESOLUTION"][0]))
         self.cam_res_width.pack(side="left")
+        
         ttk.Label(self.cam_res_frame, text="×").pack(side="left", padx=2)
-        self.cam_res_height = ttk.Entry(self.cam_res_frame, width=7)
+        
+        self.cam_res_height = ttk.Entry(self.cam_res_frame, width=7, validate="key", validatecommand=vcmd)
         self.cam_res_height.insert(0, str(settings["CAMERA_RESOLUTION"][1]))
         self.cam_res_height.pack(side="left")
+        
+        # Add label to show max supported resolution
+        self.max_res_label = ttk.Label(main_frame, text="", foreground="gray")
+        self.max_res_label.grid(row=row, column=2, sticky="e")
         row += 1
 
         # Camera FPS (unchanged)
@@ -132,6 +142,15 @@ class SettingsMenu:
         # Set reasonable minimum size (width, height)
         self.master.minsize(500, 400)  # Adjusted to fit content without extra space# Modified slider section using tk.Scale
 
+    def update_max_resolution_label(self):
+        """Update the label showing max supported resolution"""
+        cap = cv2.VideoCapture(settings["CAMERA"])
+        if cap.isOpened():
+            max_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            max_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            cap.release()
+            self.max_res_label.config(text=f"Max: {max_width}x{max_height}")
+
     def get_cameras(self):
         index = 0
         cameras = []
@@ -177,8 +196,37 @@ class SettingsMenu:
 
     def get_microphones(self):
         return [(i, dev['name']) for i, dev in enumerate(sd.query_devices()) if dev['max_input_channels'] > 0]
+    
+    def validate_resolution(self, new_value, res_type):
+        """Validate resolution entries and check against camera max"""
+        if not new_value.isdigit():
+            return False
+        return True
 
     def on_save(self):
+        # Before saving, verify the resolution is supported
+        try:
+            width = int(self.cam_res_width.get())
+            height = int(self.cam_res_height.get())
+            
+            # Get camera's actual capabilities
+            cap = cv2.VideoCapture(settings["CAMERA"])
+            if cap.isOpened():
+                max_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                max_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                cap.release()
+                
+                if width > max_width or height > max_height:
+                    messagebox.showerror(
+                        "Invalid Resolution",
+                        f"Camera only supports up to {max_width}x{max_height}\n"
+                        f"You entered {width}x{height}"
+                    )
+                    return  # Prevent saving invalid resolution
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid numbers for resolution")
+            return
+    
         settings["CAMERA"] = int(self.camera_dropdown.get().split(":")[0])
         settings["MICROPHONE"] = int(self.mic_dropdown.get().split(":")[0])
         settings["CAMERA_RESOLUTION"] = [int(self.cam_res_width.get()), int(self.cam_res_height.get())]

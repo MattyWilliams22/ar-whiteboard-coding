@@ -3,8 +3,8 @@
     "NUM_VALID_IMAGES": 4,
     "CAMERA": 0,
     "CAMERA_RESOLUTION": [
-        1920,
-        1080
+        640,
+        480
     ],
     "CAMERA_FPS": 20,
     "VOICE_COMMANDS": false,
