@@ -14,7 +14,8 @@ default_settings = {
     "MICROPHONE": 0,
     "PROJECTION_RESOLUTION": [1280, 790],
     "PROJECT_CORNERS": True,
-    "CORNER_MARKER_SIZE": 35
+    "CORNER_MARKER_SIZE": 35,
+    "HELPER_CODE": "# Write helper functions here\n# Whiteboard code will be inserted at #INSERT\n#INSERT"
 }
 
 settings = default_settings.copy()

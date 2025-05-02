@@ -1,6 +1,5 @@
-import messagebox
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import sounddevice as sd
 import cv2
 from settings import settings, save_settings
@@ -9,21 +8,30 @@ class SettingsMenu:
     def __init__(self, master, camera_preview=None):
         self.master = master
         master.title("Settings")
-        # Removed fixed geometry to let window size adjust naturally
-        self.camera_preview = camera_preview
-        self.create_widgets()
         
-        # Update window size after widgets are created
+        # Create notebook for tabs
+        self.notebook = ttk.Notebook(master)
+        self.notebook.pack(fill="both", expand=True)
+        
+        # Create frames for each tab
+        self.create_device_settings_tab()
+        self.create_helper_code_tab()
+        
+        # Configure window sizing
         master.update_idletasks()
-        # Set maximum height to current height (prevents vertical expansion)
-        master.maxsize(master.winfo_width(), master.winfo_height())
+        master.minsize(600, 500)
+        master.maxsize(800, 700)
 
-    def create_widgets(self):
-        main_frame = ttk.Frame(self.master, padding="10")
-        main_frame.grid(row=0, column=0, sticky="nsew")
+    def create_device_settings_tab(self):
+        """Tab for hardware and display settings"""
+        self.device_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.device_frame, text="Device Settings")
+        
+        main_frame = ttk.Frame(self.device_frame, padding="10")
+        main_frame.pack(fill="both", expand=True)
         
         row = 0
-
+        
         # Camera device dropdown
         ttk.Label(main_frame, text="Camera:").grid(row=row, column=0, sticky="w", pady=2)
         self.cameras = self.get_cameras()
@@ -49,7 +57,6 @@ class SettingsMenu:
         self.cam_res_frame = ttk.Frame(main_frame)
         self.cam_res_frame.grid(row=row, column=1, columnspan=4, sticky="w", pady=2)
         
-        # Add validation commands
         vcmd = (self.master.register(self.validate_resolution), '%P', 'camera')
         
         self.cam_res_width = ttk.Entry(self.cam_res_frame, width=7, validate="key", validatecommand=vcmd)
@@ -62,19 +69,18 @@ class SettingsMenu:
         self.cam_res_height.insert(0, str(settings["CAMERA_RESOLUTION"][1]))
         self.cam_res_height.pack(side="left")
         
-        # Add label to show max supported resolution
         self.max_res_label = ttk.Label(main_frame, text="", foreground="gray")
         self.max_res_label.grid(row=row, column=2, sticky="e")
         row += 1
 
-        # Camera FPS (unchanged)
+        # Camera FPS
         ttk.Label(main_frame, text="Camera FPS:").grid(row=row, column=0, sticky="w", pady=2)
         self.cam_fps = ttk.Entry(main_frame, width=7)
         self.cam_fps.insert(0, str(settings["CAMERA_FPS"]))
         self.cam_fps.grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Projection resolution (unchanged)
+        # Projection resolution
         ttk.Label(main_frame, text="Projection Resolution:").grid(row=row, column=0, sticky="w", pady=2)
         self.proj_res_frame = ttk.Frame(main_frame)
         self.proj_res_frame.grid(row=row, column=1, columnspan=4, sticky="w", pady=2)
@@ -88,33 +94,28 @@ class SettingsMenu:
         self.proj_res_height.pack(side="left")
         row += 1
 
-        # Checkboxes (unchanged)
+        # Checkboxes
         self.project_image_var = tk.BooleanVar(value=settings["PROJECT_IMAGE"])
-        ttk.Label(main_frame, text="Project Image:").grid(row=row, column=0, sticky="w", pady=2)
-        ttk.Checkbutton(main_frame, variable=self.project_image_var).grid(row=row, column=1, sticky="w", pady=2)
+        ttk.Checkbutton(main_frame, text="Project Image", variable=self.project_image_var).grid(row=row, column=0, sticky="w", pady=2)
         row += 1
 
         self.project_corners_var = tk.BooleanVar(value=settings["PROJECT_CORNERS"])
-        ttk.Label(main_frame, text="Project Corners:").grid(row=row, column=0, sticky="w", pady=2)
-        ttk.Checkbutton(main_frame, variable=self.project_corners_var).grid(row=row, column=1, sticky="w", pady=2)
+        ttk.Checkbutton(main_frame, text="Project Corner Markers", variable=self.project_corners_var).grid(row=row, column=0, sticky="w", pady=2)
         row += 1
 
         self.voice_commands_var = tk.BooleanVar(value=settings["VOICE_COMMANDS"])
-        ttk.Label(main_frame, text="Voice Commands:").grid(row=row, column=0, sticky="w", pady=2)
-        ttk.Checkbutton(main_frame, variable=self.voice_commands_var).grid(row=row, column=1, sticky="w", pady=2)
+        ttk.Checkbutton(main_frame, text="Enable Voice Commands", variable=self.voice_commands_var).grid(row=row, column=0, sticky="w", pady=2)
         row += 1
 
-        # Corner marker size (unchanged)
+        # Corner marker size
         ttk.Label(main_frame, text="Corner Marker Size:").grid(row=row, column=0, sticky="w", pady=2)
         self.corner_marker_size = ttk.Entry(main_frame, width=7)
         self.corner_marker_size.insert(0, str(settings["CORNER_MARKER_SIZE"]))
         self.corner_marker_size.grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Modified slider section using tk.Scale
-        ttk.Label(main_frame, text="Detection Confidence (Speed <--> Accuracy):").grid(
-            row=row, column=0, sticky="w", pady=2)
-
+        # Slider
+        ttk.Label(main_frame, text="Detection Confidence:").grid(row=row, column=0, sticky="w", pady=2)
         self.num_valid_images = tk.Scale(
             main_frame,
             from_=1,
@@ -123,24 +124,53 @@ class SettingsMenu:
             showvalue=1,
             tickinterval=1,
             resolution=1,
-            length=400  # Adjusted to reasonable width
+            length=400
         )
         self.num_valid_images.set(settings["NUM_VALID_IMAGES"])
         self.num_valid_images.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Save and close button at the bottom
-        ttk.Button(main_frame, text="Save and Close", command=self.on_save).grid(
-            row=row, column=0, columnspan=5, pady=10)
+    def create_helper_code_tab(self):
+        """Tab for helper code editing"""
+        self.helper_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.helper_frame, text="Helper Code")
         
-        # Configure grid weights to prevent expansion
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(row, weight=0)  # Prevent button row from expanding
-        self.master.columnconfigure(0, weight=1)
-        self.master.rowconfigure(0, weight=1)
+        # Instructions
+        instructions = ttk.Label(
+            self.helper_frame,
+            text="Write helper functions/tests here. Use #INSERT to specify where whiteboard code should be placed.",
+            wraplength=550,
+            padding=10
+        )
+        instructions.pack()
         
-        # Set reasonable minimum size (width, height)
-        self.master.minsize(500, 400)  # Adjusted to fit content without extra space# Modified slider section using tk.Scale
+        # Code editor
+        self.helper_text = tk.Text(
+            self.helper_frame,
+            width=80,
+            height=25,
+            wrap="word",
+            font=("Consolas", 10),
+            padx=10,
+            pady=10
+        )
+        self.helper_text.insert("1.0", settings["HELPER_CODE"])
+        
+        # Add scrollbar
+        scrollbar = ttk.Scrollbar(self.helper_frame, command=self.helper_text.yview)
+        self.helper_text.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack widgets
+        self.helper_text.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Save button at bottom
+        save_btn = ttk.Button(
+            self.helper_frame,
+            text="Save All Settings",
+            command=self.on_save
+        )
+        save_btn.pack(pady=10)
 
     def update_max_resolution_label(self):
         """Update the label showing max supported resolution"""
@@ -204,12 +234,12 @@ class SettingsMenu:
         return True
 
     def on_save(self):
-        # Before saving, verify the resolution is supported
+        """Save all settings including helper code"""
         try:
+            # Validate resolution first
             width = int(self.cam_res_width.get())
             height = int(self.cam_res_height.get())
             
-            # Get camera's actual capabilities
             cap = cv2.VideoCapture(settings["CAMERA"])
             if cap.isOpened():
                 max_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -222,26 +252,29 @@ class SettingsMenu:
                         f"Camera only supports up to {max_width}x{max_height}\n"
                         f"You entered {width}x{height}"
                     )
-                    return  # Prevent saving invalid resolution
+                    return
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numbers for resolution")
             return
     
-        settings["CAMERA"] = int(self.camera_dropdown.get().split(":")[0])
-        settings["MICROPHONE"] = int(self.mic_dropdown.get().split(":")[0])
-        settings["CAMERA_RESOLUTION"] = [int(self.cam_res_width.get()), int(self.cam_res_height.get())]
-        settings["CAMERA_FPS"] = int(self.cam_fps.get())
-        settings["PROJECTION_RESOLUTION"] = [int(self.proj_res_width.get()), int(self.proj_res_height.get())]
-        settings["PROJECT_IMAGE"] = self.project_image_var.get()
-        settings["PROJECT_CORNERS"] = self.project_corners_var.get()
-        settings["CORNER_MARKER_SIZE"] = int(self.corner_marker_size.get())
-        settings["VOICE_COMMANDS"] = self.voice_commands_var.get()
-        settings["NUM_VALID_IMAGES"] = self.num_valid_images.get()
+        # Save device settings
+        settings.update({
+            "CAMERA": int(self.camera_dropdown.get().split(":")[0]),
+            "MICROPHONE": int(self.mic_dropdown.get().split(":")[0]),
+            "CAMERA_RESOLUTION": [int(self.cam_res_width.get()), int(self.cam_res_height.get())],
+            "CAMERA_FPS": int(self.cam_fps.get()),
+            "PROJECTION_RESOLUTION": [int(self.proj_res_width.get()), int(self.proj_res_height.get())],
+            "PROJECT_IMAGE": self.project_image_var.get(),
+            "PROJECT_CORNERS": self.project_corners_var.get(),
+            "CORNER_MARKER_SIZE": int(self.corner_marker_size.get()),
+            "VOICE_COMMANDS": self.voice_commands_var.get(),
+            "NUM_VALID_IMAGES": self.num_valid_images.get(),
+            "HELPER_CODE": self.helper_text.get("1.0", "end-1c")
+        })
 
         save_settings()
         
-        # Only update camera preview if it exists
-        if self.camera_preview is not None:
+        if hasattr(self, 'camera_preview') and self.camera_preview is not None:
             self.camera_preview.update_settings(
                 source=settings["CAMERA"],
                 resolution=settings["CAMERA_RESOLUTION"],

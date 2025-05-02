@@ -5,14 +5,40 @@ import os
 import uuid
 import shutil
 import subprocess
+from settings import settings
 
 class Executor:
-  def __init__(self, python_code):
-    self.python_code = python_code
+  def __init__(self, whiteboard_code):
+    self.whiteboard_code = whiteboard_code
+    self.helper_code = settings.get("HELPER_CODE", "")
     self.output = None
     self.error_message = None
 
+  def _combine_code(self):
+    """Combines helper and whiteboard code with proper indentation"""
+    if not self.helper_code.strip():
+      return self.whiteboard_code
+        
+    if "#INSERT" not in self.helper_code:
+      return self.helper_code + "\n" + self.whiteboard_code
+        
+    # Find indentation of #INSERT
+    insert_pos = self.helper_code.find("#INSERT")
+    line_start = self.helper_code.rfind("\n", 0, insert_pos) + 1
+    indent = self.helper_code[line_start:insert_pos]
+    
+    # Indent each line of whiteboard code
+    indented_code = ""
+    for line in self.whiteboard_code.splitlines(keepends=True):
+      if line.strip():
+        indented_code += indent + line
+      else:
+        indented_code += line
+            
+    return self.helper_code.replace("#INSERT", indented_code)
+
   def execute_locally(self):
+    full_code = self._combine_code()
     self.output = None
     self.error_message = None
 
@@ -21,7 +47,7 @@ class Executor:
     sys.stdout = output_capture
 
     try:
-      exec(self.python_code, {})
+      exec(full_code, {})
     except Exception as e:
       self.error_message = str(e)
 
@@ -35,6 +61,7 @@ class Executor:
     return self.output, None
 
   def execute_in_sandbox(self):
+    full_code = self._combine_code()
     self.output = None
     self.error_message = None
 
@@ -47,7 +74,7 @@ class Executor:
     try:
       # Write code to temp file
       with open(code_file_path, "w") as f:
-        f.write(self.python_code)
+        f.write(full_code)
 
       container_name = f"code-sandbox-{uuid.uuid4().hex[:8]}"
 
