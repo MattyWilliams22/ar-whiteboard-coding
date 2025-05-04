@@ -5,9 +5,12 @@ import cv2
 from settings import settings, save_settings
 
 class SettingsMenu:
-    def __init__(self, master, camera_preview=None):
+    def __init__(self, master, camera_preview=None, voice_thread=None):
         self.master = master
         master.title("Settings")
+
+        self.camera_preview = camera_preview
+        self.voice_thread = voice_thread
         
         # Create notebook for tabs
         self.notebook = ttk.Notebook(master)
@@ -280,6 +283,9 @@ class SettingsMenu:
                 resolution=settings["CAMERA_RESOLUTION"],
                 fps=settings["CAMERA_FPS"]
             )
+
+        if hasattr(self, 'voice_thread') and self.voice_thread is not None:
+            self.voice_thread.update_settings()
 
         self.master.destroy()
 

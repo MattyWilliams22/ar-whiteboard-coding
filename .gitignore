@@ -10,3 +10,4 @@ apriltag.py
 images
 test_images
 settings.json
+.env

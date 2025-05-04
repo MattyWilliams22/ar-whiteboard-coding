@@ -1,9 +1,11 @@
 import cv2
+import os
 import time
 import tkinter as tk
 from enum import Enum, auto
 from threading import Lock
 from input.camera_preview import CameraPreviewThread
+from input.voice_commands import VoiceCommandThread
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detector import Detector
 from code_detection.tokeniser import Tokeniser
@@ -14,6 +16,9 @@ from input.settings_menu import SettingsMenu
 from settings import settings, load_settings
 from fsm.states import SystemState, Event
 from fsm.state_machine import SystemFSM
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ======================
 # APPLICATION FUNCTIONS
@@ -110,19 +115,37 @@ def run_code_from_frame(preview, fsm):
         fsm.transition(Event.ERROR)
         return None
 
-def show_settings_menu(fsm):
+def show_settings_menu(fsm, camera_preview=None, voice_thread=None):
     if not fsm.transition(Event.OPEN_SETTINGS):
         return
 
     root = tk.Tk()
-    app = SettingsMenu(root, None)
+    app = SettingsMenu(root, camera_preview, voice_thread)
     root.mainloop()
     load_settings()
     fsm.transition(Event.CLOSE_SETTINGS)
 
 def main():
     fsm = SystemFSM()
-    show_settings_menu(fsm)  # Start with settings
+    load_settings()  # Ensure settings are loaded
+    
+    # Initialize voice thread if enabled
+    voice_thread = None
+    if settings["VOICE_COMMANDS"]:
+        try:
+            voice_thread = VoiceCommandThread(
+                fsm=fsm,
+                access_key=os.getenv("PORCUPINE_ACCESS_KEY"),
+                settings=settings,
+                hotword_sensitivity=0.5,
+                command_timeout=3
+            )
+            voice_thread.start()
+        except Exception as e:
+            print(f"Failed to initialize voice commands: {e}")
+
+    # Pass voice_thread to settings menu
+    show_settings_menu(fsm, camera_preview=None, voice_thread=voice_thread)
 
     preview = CameraPreviewThread(
         source=settings["CAMERA"],
@@ -152,13 +175,15 @@ def main():
             elif key == ord('r') and fsm.state in (SystemState.IDLE, SystemState.PROJECTING):
                 run_code_from_frame(preview, fsm)
             elif key == ord('s') and fsm.state != SystemState.SETTINGS:
-                show_settings_menu(fsm)
+                show_settings_menu(fsm, preview, voice_thread)
             elif key == 27:  # ESC key
                 fsm.transition(Event.EXIT)
 
     finally:
         preview.stop()
         preview.join()
+        voice_thread.stop()
+        voice_thread.join()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":

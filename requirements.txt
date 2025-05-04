@@ -4,3 +4,7 @@ paddlepaddle
 setuptools
 docker
 sounddevice
+python-dotenv
+pvporcupine
+pyaudio
+speechrecognition
