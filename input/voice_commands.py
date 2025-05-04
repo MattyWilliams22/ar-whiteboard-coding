@@ -27,10 +27,16 @@ class VoiceCommandThread(threading.Thread):
         # Command mapping
         self.command_map = {
             'run': Event.START_RUN,
-            'stop': Event.STOP_RUN,
-            'settings': Event.OPEN_SETTINGS,
+            'compile': Event.START_RUN,
+            'execute': Event.START_RUN,
+            'restart': Event.START_RUN,
+            'clear': Event.CLEAR,
+            'back': Event.CLEAR,
+            'stop': Event.CLEAR,
+            'idle': Event.CLEAR,
             'exit': Event.EXIT,
-            'close': Event.CLOSE_SETTINGS
+            'quit': Event.EXIT,
+            'close': Event.EXIT
         }
         
         # Initialize Porcupine (after all params are set)

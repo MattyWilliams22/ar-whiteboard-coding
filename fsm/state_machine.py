@@ -11,32 +11,23 @@ class SystemFSM:
         self.transitions = {
             SystemState.IDLE: {
                 Event.START_RUN: SystemState.RUNNING,
-                Event.OPEN_SETTINGS: SystemState.SETTINGS,
-                Event.ERROR: SystemState.ERROR,
+                Event.ERROR_OCCURRED: SystemState.ERROR,
                 Event.EXIT: SystemState.EXITING
             },
             SystemState.RUNNING: {
-                Event.STOP_RUN: SystemState.IDLE,
-                Event.TOGGLE_PROJECT: SystemState.PROJECTING,
-                Event.OPEN_SETTINGS: SystemState.SETTINGS,
-                Event.ERROR: SystemState.ERROR,
+                Event.CLEAR: SystemState.IDLE,
+                Event.FINISH_RUN: SystemState.PROJECTING,
+                Event.ERROR_OCCURRED: SystemState.ERROR,
                 Event.EXIT: SystemState.EXITING
             },
             SystemState.PROJECTING: {
-                Event.STOP_RUN: SystemState.IDLE,
+                Event.CLEAR: SystemState.IDLE,
                 Event.START_RUN: SystemState.RUNNING,
-                Event.OPEN_SETTINGS: SystemState.SETTINGS,
-                Event.ERROR: SystemState.ERROR,
-                Event.EXIT: SystemState.EXITING
-            },
-            SystemState.SETTINGS: {
-                Event.CLOSE_SETTINGS: SystemState.IDLE,
-                Event.ERROR: SystemState.ERROR,
+                Event.ERROR_OCCURRED: SystemState.ERROR,
                 Event.EXIT: SystemState.EXITING
             },
             SystemState.ERROR: {
-                Event.RESOLVED: SystemState.IDLE,
-                Event.OPEN_SETTINGS: SystemState.SETTINGS,
+                Event.CLEAR: SystemState.IDLE,
                 Event.EXIT: SystemState.EXITING
             }
         }
