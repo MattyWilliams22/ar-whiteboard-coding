@@ -71,7 +71,7 @@ def process_images(warped_images):
     return warped_image, boxes, python_code, code_output, error_box
 
 def run_code_from_frame(preview, fsm):
-    if not fsm.transition(Event.START_RUN):
+    if not fsm.state == SystemState.RUNNING:
         return None
 
     projector = Projector(None, None, None, None, None,
@@ -125,9 +125,36 @@ def show_settings_menu(fsm, camera_preview=None, voice_thread=None):
     load_settings()
     fsm.transition(Event.CLOSE_SETTINGS)
 
+def handle_state_actions(fsm, preview):
+    """Handle state-specific actions based on current FSM state"""
+    if fsm.state == SystemState.RUNNING:
+        return run_code_from_frame(preview, fsm)
+    elif fsm.state == SystemState.IDLE:
+        projector = Projector(None, None, None, None, None,
+                            output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                            marker_size=settings["CORNER_MARKER_SIZE"],
+                            debug_mode=False)
+        minimal_projection = projector.display_minimal_projection()
+        if minimal_projection is not None:
+            cv2.imshow("Output", minimal_projection)
+            return minimal_projection
+    elif fsm.state == SystemState.PROJECTING:
+        # Maintain current projection (no action needed)
+        pass
+    elif fsm.state == SystemState.ERROR:
+        # Display error state (you might want to add specific error handling)
+        error_projection = Projector(None, "Error occurred", None, None, None,
+                                   output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                                   marker_size=settings["CORNER_MARKER_SIZE"],
+                                   debug_mode=False).display_full_projection()
+        if error_projection is not None:
+            cv2.imshow("Output", error_projection)
+            return error_projection
+    return None
+
 def main():
     fsm = SystemFSM()
-    load_settings()  # Ensure settings are loaded
+    load_settings()
     
     # Initialize voice thread if enabled
     voice_thread = None
@@ -144,7 +171,6 @@ def main():
         except Exception as e:
             print(f"Failed to initialize voice commands: {e}")
 
-    # Pass voice_thread to settings menu
     show_settings_menu(fsm, camera_preview=None, voice_thread=voice_thread)
 
     preview = CameraPreviewThread(
@@ -169,21 +195,46 @@ def main():
                 fsm.transition(Event.EXIT)
                 break
 
+            # Handle key inputs
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
-                fsm.transition(Event.STOP_RUN)
-            elif key == ord('r') and fsm.state in (SystemState.IDLE, SystemState.PROJECTING):
-                run_code_from_frame(preview, fsm)
+                if fsm.state == SystemState.RUNNING:
+                    fsm.transition(Event.STOP_RUN)
+            elif key == ord('r'):
+                if fsm.state in (SystemState.IDLE, SystemState.PROJECTING):
+                    fsm.transition(Event.START_RUN)
             elif key == ord('s') and fsm.state != SystemState.SETTINGS:
                 show_settings_menu(fsm, preview, voice_thread)
             elif key == 27:  # ESC key
                 fsm.transition(Event.EXIT)
 
+            # Handle state-specific actions
+            if fsm.state == SystemState.RUNNING:
+                projection = run_code_from_frame(preview, fsm)
+                if projection is not None:
+                    cv2.imshow("Output", projection)
+            elif fsm.state == SystemState.IDLE:
+                projector = Projector(None, None, None, None, None,
+                                    output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                                    marker_size=settings["CORNER_MARKER_SIZE"],
+                                    debug_mode=False)
+                minimal_projection = projector.display_minimal_projection()
+                if minimal_projection is not None:
+                    cv2.imshow("Output", minimal_projection)
+            elif fsm.state == SystemState.ERROR:
+                error_projection = Projector(None, "Error occurred", None, None, None,
+                                           output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                                           marker_size=settings["CORNER_MARKER_SIZE"],
+                                           debug_mode=False).display_full_projection()
+                if error_projection is not None:
+                    cv2.imshow("Output", error_projection)
+
     finally:
         preview.stop()
         preview.join()
-        voice_thread.stop()
-        voice_thread.join()
+        if voice_thread:
+            voice_thread.stop()
+            voice_thread.join()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":

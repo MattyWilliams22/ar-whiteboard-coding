@@ -43,7 +43,9 @@ class SystemFSM:
 
     def transition(self, event):
         with self.lock:
+            print(f"Current state: {self.state}, Event: {event}")
             if event in self.transitions[self.state]:
                 self.state = self.transitions[self.state][event]
+                print(f"Transitioned to {self.state} state.")
                 return True
             return False
