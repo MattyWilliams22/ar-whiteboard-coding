@@ -253,7 +253,7 @@ class SettingsMenu:
             req_width = int(self.cam_res_width.get())
             req_height = int(self.cam_res_height.get())
             
-            cap = cv2.VideoCapture(settings["CAMERA"])
+            cap = cv2.VideoCapture(self.camera_dropdown.get().split(":")[0])
             if cap.isOpened():
                 cap.set(cv2.CAP_PROP_FRAME_WIDTH, req_width)
                 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, req_height)
@@ -267,8 +267,8 @@ class SettingsMenu:
                         f"Camera adjusted to {actual_w}x{actual_h}\n"
                         f"(Requested {req_width}x{req_height})"
                     )
-                    self.cam_res._width.set(actual_w)
-                    self.cam_res._height.set(actual_h)
+                    self.cam_res_width.set(actual_w)
+                    self.cam_res_height.set(actual_h)
 
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numbers for resolution")
