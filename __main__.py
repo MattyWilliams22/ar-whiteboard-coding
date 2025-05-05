@@ -79,13 +79,21 @@ def run_code_from_frame(preview, fsm):
         # Collect and process images
         valid_images = collect_valid_images(preview, settings["NUM_VALID_IMAGES"])
         if len(valid_images) < settings["NUM_VALID_IMAGES"]:
-            print("Failed to capture enough valid images.")
+            error_projection = Projector(None, None, "Failed to capture enough valid images.", None, None,
+                                           output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                                           marker_size=settings["CORNER_MARKER_SIZE"],
+                                           debug_mode=settings["PROJECT_IMAGE"]).display_error_projection()
+            cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
             return None
 
         image, boxes, python_code, code_output, error_box = process_images(valid_images)
         if code_output is None or python_code is None:
-            print("Error during code processing.")
+            error_projection = Projector(image, python_code, code_output, boxes, error_box,
+                                           output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+                                           marker_size=settings["CORNER_MARKER_SIZE"],
+                                           debug_mode=settings["PROJECT_IMAGE"]).display_full_projection()
+            cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
             return None
 
@@ -162,10 +170,10 @@ def main():
                 minimal_projection = projector.display_minimal_projection()
                 cv2.imshow("Output", minimal_projection)
             elif fsm.state == SystemState.ERROR:
-                error_projection = Projector(None, "Error occurred", None, None, None,
+                error_projection = Projector(None, None, "Error occurred", None, None,
                                            output_size=tuple(settings["PROJECTION_RESOLUTION"]),
                                            marker_size=settings["CORNER_MARKER_SIZE"],
-                                           debug_mode=False).display_full_projection()
+                                           debug_mode=False).display_error_projection()
                 cv2.imshow("Output", error_projection)
 
             # Handle key inputs
