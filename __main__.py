@@ -169,12 +169,8 @@ def main():
                                     debug_mode=False)
                 minimal_projection = projector.display_minimal_projection()
                 cv2.imshow("Output", minimal_projection)
-            elif fsm.state == SystemState.ERROR:
-                error_projection = Projector(None, None, "Error occurred", None, None,
-                                           output_size=tuple(settings["PROJECTION_RESOLUTION"]),
-                                           marker_size=settings["CORNER_MARKER_SIZE"],
-                                           debug_mode=False).display_error_projection()
-                cv2.imshow("Output", error_projection)
+            elif fsm.state == SystemState.RUNNING:
+                run_code_from_frame(preview, fsm)
 
             # Handle key inputs
             key = cv2.waitKey(1) & 0xFF
@@ -183,7 +179,6 @@ def main():
             elif key == ord('r'):
                 if fsm.state in (SystemState.IDLE, SystemState.PROJECTING):
                     fsm.transition(Event.START_RUN)
-                    run_code_from_frame(preview, fsm)
             elif key == ord('s'):
                 show_settings_menu(preview, voice_thread)
             elif key == 27:  # ESC key
