@@ -249,59 +249,70 @@ class SettingsMenu:
     def on_save(self):
         """Save all settings including helper code"""
         try:
-            # Validate resolution first
+            # Get requested resolution
             req_width = int(self.cam_res_width.get())
             req_height = int(self.cam_res_height.get())
             
-            cap = cv2.VideoCapture(self.camera_dropdown.get().split(":")[0])
-            if cap.isOpened():
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, req_width)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, req_height)
-                actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                cap.release()
+            # Get selected camera's max resolution
+            cam_idx = self.camera_dropdown.current()
+            if cam_idx >= 0 and len(self.cameras) > cam_idx:
+                _, _, max_w, max_h = self.cameras[cam_idx]
                 
-                if (req_width, req_height) != (actual_w, actual_h):
-                    messagebox.showwarning(
-                        "Resolution Adjusted",
-                        f"Camera adjusted to {actual_w}x{actual_h}\n"
-                        f"(Requested {req_width}x{req_height})"
+                # Check and cap if needed
+                capped = False
+                if req_width > max_w:
+                    req_width = max_w
+                    capped = True
+                if req_height > max_h:
+                    req_height = max_h
+                    capped = True
+                    
+                # Notify user if values were capped
+                if capped:
+                    messagebox.showinfo(
+                        "Resolution Capped",
+                        f"Resolution was capped to {req_width}x{req_height}\n"
+                        f"to match camera's maximum supported resolution"
                     )
-                    self.cam_res_width.set(actual_w)
-                    self.cam_res_height.set(actual_h)
+                    
+                    # Update the UI fields to show capped values
+                    self.cam_res_width.delete(0, tk.END)
+                    self.cam_res_width.insert(0, str(req_width))
+                    self.cam_res_height.delete(0, tk.END)
+                    self.cam_res_height.insert(0, str(req_height))
+
+            # Save device settings
+            settings.update({
+                "CAMERA": int(self.camera_dropdown.get().split(":")[0]),
+                "MICROPHONE": int(self.mic_dropdown.get().split(":")[0]),
+                "CAMERA_RESOLUTION": [req_width, req_height],
+                "CAMERA_FPS": int(self.cam_fps.get()),
+                "PROJECTION_RESOLUTION": [int(self.proj_res_width.get()), int(self.proj_res_height.get())],
+                "PROJECT_IMAGE": self.project_image_var.get(),
+                "PROJECT_CORNERS": self.project_corners_var.get(),
+                "CORNER_MARKER_SIZE": int(self.corner_marker_size.get()),
+                "VOICE_COMMANDS": self.voice_commands_var.get(),
+                "NUM_VALID_IMAGES": self.num_valid_images.get(),
+                "HELPER_CODE": self.helper_text.get("1.0", "end-1c")
+            })
+
+            save_settings()
+            
+            if hasattr(self, 'camera_preview') and self.camera_preview is not None:
+                self.camera_preview.update_settings(
+                    source=settings["CAMERA"],
+                    resolution=settings["CAMERA_RESOLUTION"],
+                    fps=settings["CAMERA_FPS"]
+                )
+
+            if hasattr(self, 'voice_thread') and self.voice_thread is not None:
+                self.voice_thread.update_settings()
+
+            self.master.destroy()
 
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numbers for resolution")
             return
-    
-        # Save device settings
-        settings.update({
-            "CAMERA": int(self.camera_dropdown.get().split(":")[0]),
-            "MICROPHONE": int(self.mic_dropdown.get().split(":")[0]),
-            "CAMERA_RESOLUTION": [int(self.cam_res_width.get()), int(self.cam_res_height.get())],
-            "CAMERA_FPS": int(self.cam_fps.get()),
-            "PROJECTION_RESOLUTION": [int(self.proj_res_width.get()), int(self.proj_res_height.get())],
-            "PROJECT_IMAGE": self.project_image_var.get(),
-            "PROJECT_CORNERS": self.project_corners_var.get(),
-            "CORNER_MARKER_SIZE": int(self.corner_marker_size.get()),
-            "VOICE_COMMANDS": self.voice_commands_var.get(),
-            "NUM_VALID_IMAGES": self.num_valid_images.get(),
-            "HELPER_CODE": self.helper_text.get("1.0", "end-1c")
-        })
-
-        save_settings()
-        
-        if hasattr(self, 'camera_preview') and self.camera_preview is not None:
-            self.camera_preview.update_settings(
-                source=settings["CAMERA"],
-                resolution=settings["CAMERA_RESOLUTION"],
-                fps=settings["CAMERA_FPS"]
-            )
-
-        if hasattr(self, 'voice_thread') and self.voice_thread is not None:
-            self.voice_thread.update_settings()
-
-        self.master.destroy()
 
 def open_settings_menu(camera_preview=None):
     root = tk.Tk()
