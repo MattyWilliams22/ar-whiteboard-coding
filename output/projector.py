@@ -337,5 +337,25 @@ class Projector:
 
     return self.output_image
   
+  def display_error_projection(self):
+    # Reset output_image
+    self.load_output_image()
+
+    # Display the error box
+    if self.error_box is not None:
+        self.display_bounding_box(self.error_box, (0, 0, 255, 255), filled=True)  # Red for error box
+
+    if self.code_output is not None:
+        # Box in centre of the projection
+        central_box = np.array([
+            [self.output_size[0] // 4, self.output_size[1] // 4],
+            [3 * self.output_size[0] // 4, self.output_size[1] // 4],
+            [3 * self.output_size[0] // 4, 3 * self.output_size[1] // 4],
+            [self.output_size[0] // 4, 3 * self.output_size[1] // 4]
+            ], dtype=int)
+        self.display_text_in_box(self.code_output, central_box, font_scale=0.6, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1)
+
+    return self.output_image
+  
   def set_image(self, image):
     self.image = image

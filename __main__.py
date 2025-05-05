@@ -79,11 +79,13 @@ def run_code_from_frame(preview, fsm):
         # Collect and process images
         valid_images = collect_valid_images(preview, settings["NUM_VALID_IMAGES"])
         if len(valid_images) < settings["NUM_VALID_IMAGES"]:
+            print("Failed to capture enough valid images.")
             fsm.transition(Event.ERROR_OCCURRED)
             return None
 
         image, boxes, python_code, code_output, error_box = process_images(valid_images)
         if code_output is None or python_code is None:
+            print("Error during code processing.")
             fsm.transition(Event.ERROR_OCCURRED)
             return None
 

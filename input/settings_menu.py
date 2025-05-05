@@ -39,7 +39,7 @@ class SettingsMenu:
         ttk.Label(main_frame, text="Camera:").grid(row=row, column=0, sticky="w", pady=2)
         self.cameras = self.get_cameras()
         self.camera_dropdown = ttk.Combobox(main_frame, 
-                                          values=[f"{i}: {name}" for i, name in self.cameras], 
+                                          values=[f"{i}: {name}" for i, name, _, _ in self.cameras], 
                                           width=50)
         self.camera_dropdown.current(settings["CAMERA"])
         self.camera_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
@@ -185,47 +185,57 @@ class SettingsMenu:
             self.max_res_label.config(text=f"Max: {max_width}x{max_height}")
 
     def get_cameras(self):
+        """Returns list of available cameras with their max resolutions"""
         index = 0
         cameras = []
-        # Common camera name patterns to look for
-        common_names = {
-            'HD': 'HD Camera',
-            'USB': 'USB Webcam', 
-            'FaceTime': 'FaceTime Camera',
-            'Logitech': 'Logitech Webcam',
-            'Integrated': 'Integrated Webcam'
-        }
         
-        while index < 10:
+        while index < 10:  # Check first 10 camera indices
             cap = cv2.VideoCapture(index)
             if cap.isOpened():
-                # Try to get some properties that might hint at the camera type
-                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                
-                # Create a descriptive name based on resolution
-                resolution = f"{width}x{height}"
-                if width >= 1920:
-                    res_description = "HD"
-                elif width >= 1280:
-                    res_description = "Mid-Res" 
-                else:
-                    res_description = "Standard"
-                
-                # Default name with resolution info
-                name = f"Camera {index} ({res_description} {resolution})"
-                
-                # Check for common name patterns
-                for pattern, display_name in common_names.items():
-                    if pattern in name:
-                        name = f"{display_name} {index} ({resolution})"
-                        break
-                
-                cameras.append((index, name))
+                # Get max supported resolution
+                max_res = self._get_max_camera_resolution(cap)
                 cap.release()
+                
+                if max_res:
+                    width, height = max_res
+                    # Generate descriptive name
+                    name = self._generate_camera_name(index, width, height)
+                    cameras.append((index, name, width, height))  # Store with max res
             index += 1
+    
+        return cameras if cameras else [(0, "Default Camera", 640, 480)]  # Fallback
+
+    def _get_max_camera_resolution(self, cap):
+        """Determine maximum supported resolution for an opened camera"""
+        test_resolutions = [
+            (3840, 2160),  # 4K
+            (2560, 1440),  # 1440p
+            (1920, 1080),  # 1080p
+            (1280, 720),   # 720p
+            (640, 480)     # 480p
+        ]
         
-        return cameras if cameras else [(0, "Default Camera")]
+        for w, h in test_resolutions:
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
+            actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            
+            if actual_w >= w and actual_h >= h:
+                return (actual_w, actual_h)
+        return None
+
+    def _generate_camera_name(self, index, width, height):
+        """Generate human-readable camera name with resolution info"""
+        res_map = {
+            (3840, 2160): "4K",
+            (2560, 1440): "1440p",
+            (1920, 1080): "1080p",
+            (1280, 720): "720p",
+            (640, 480): "SD"
+        }
+        res_description = res_map.get((width, height), f"{width}x{height}")
+        return f"Camera {index} ({res_description})"
 
     def get_microphones(self):
         return [(i, dev['name']) for i, dev in enumerate(sd.query_devices()) if dev['max_input_channels'] > 0]
@@ -240,22 +250,26 @@ class SettingsMenu:
         """Save all settings including helper code"""
         try:
             # Validate resolution first
-            width = int(self.cam_res_width.get())
-            height = int(self.cam_res_height.get())
+            req_width = int(self.cam_res_width.get())
+            req_height = int(self.cam_res_height.get())
             
             cap = cv2.VideoCapture(settings["CAMERA"])
             if cap.isOpened():
-                max_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                max_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, req_width)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, req_height)
+                actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 cap.release()
                 
-                if width > max_width or height > max_height:
-                    messagebox.showerror(
-                        "Invalid Resolution",
-                        f"Camera only supports up to {max_width}x{max_height}\n"
-                        f"You entered {width}x{height}"
+                if (req_width, req_height) != (actual_w, actual_h):
+                    messagebox.showwarning(
+                        "Resolution Adjusted",
+                        f"Camera adjusted to {actual_w}x{actual_h}\n"
+                        f"(Requested {req_width}x{req_height})"
                     )
-                    return
+                    self.cam_res._width.set(actual_w)
+                    self.cam_res._height.set(actual_h)
+
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numbers for resolution")
             return
