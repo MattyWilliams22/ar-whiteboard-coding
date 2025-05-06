@@ -1,6 +1,7 @@
 from threading import Lock
 from .states import SystemState, Event
 
+
 class SystemFSM:
     def __init__(self):
         self.state = SystemState.IDLE
@@ -12,24 +13,25 @@ class SystemFSM:
             SystemState.IDLE: {
                 Event.START_RUN: SystemState.RUNNING,
                 Event.ERROR_OCCURRED: SystemState.ERROR,
-                Event.EXIT: SystemState.EXITING
+                Event.EXIT: SystemState.EXITING,
             },
             SystemState.RUNNING: {
                 Event.CLEAR: SystemState.IDLE,
                 Event.FINISH_RUN: SystemState.PROJECTING,
                 Event.ERROR_OCCURRED: SystemState.ERROR,
-                Event.EXIT: SystemState.EXITING
+                Event.EXIT: SystemState.EXITING,
             },
             SystemState.PROJECTING: {
                 Event.CLEAR: SystemState.IDLE,
                 Event.START_RUN: SystemState.RUNNING,
                 Event.ERROR_OCCURRED: SystemState.ERROR,
-                Event.EXIT: SystemState.EXITING
+                Event.EXIT: SystemState.EXITING,
             },
             SystemState.ERROR: {
                 Event.CLEAR: SystemState.IDLE,
-                Event.EXIT: SystemState.EXITING
-            }
+                Event.START_RUN: SystemState.RUNNING,
+                Event.EXIT: SystemState.EXITING,
+            },
         }
 
     def transition(self, event):
