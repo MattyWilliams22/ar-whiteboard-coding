@@ -4,6 +4,7 @@ import time
 import tkinter as tk
 from threading import Lock
 from input.camera_preview import CameraPreviewThread
+from input.hand_gestures import HandGestureThread
 from input.voice_commands import VoiceCommandThread
 from preprocessing.preprocessor import Preprocessor
 from code_detection.detector import Detector
@@ -152,9 +153,9 @@ def run_code_from_frame(preview, fsm):
         return None
 
 
-def show_settings_menu(camera_preview=None, voice_thread=None):
+def show_settings_menu(camera_preview=None, voice_thread=None, gesture_thread=None):
     root = tk.Tk()
-    app = SettingsMenu(root, camera_preview, voice_thread)
+    app = SettingsMenu(root, camera_preview, voice_thread, gesture_thread)
     root.mainloop()
     load_settings()
 
@@ -179,7 +180,22 @@ def main():
             print(f"Failed to initialize voice commands: {e}")
             settings["VOICE_COMMANDS"] = False
 
-    show_settings_menu(voice_thread=voice_thread)
+    # Initialize hand gesture thread
+    gesture_thread = None
+    if settings["HAND_GESTURES"]:
+        try:
+            gesture_thread = HandGestureThread(
+                fsm=fsm,
+                settings=settings,
+                detection_confidence=0.7,
+                cooldown=0.5
+            )
+            gesture_thread.start()
+        except Exception as e:
+            print(f"Failed to initialize hand gestures: {e}")
+            settings["HAND_GESTURES"] = False
+
+    show_settings_menu(voice_thread=voice_thread, gesture_thread=gesture_thread)
 
     preview = CameraPreviewThread(
         source=settings["CAMERA"],
@@ -237,6 +253,9 @@ def main():
         if voice_thread:
             voice_thread.stop()
             voice_thread.join()
+        if gesture_thread:
+            gesture_thread.stop()
+            gesture_thread.join()
         cv2.destroyAllWindows()
 
 

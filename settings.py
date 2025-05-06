@@ -11,6 +11,7 @@ default_settings = {
     "CAMERA_RESOLUTION": [1920, 1080],
     "CAMERA_FPS": 10,
     "VOICE_COMMANDS": False,
+    "HAND_GESTURES": True,
     "MICROPHONE": 0,
     "PROJECTION_RESOLUTION": [1280, 790],
     "PROJECT_CORNERS": True,
