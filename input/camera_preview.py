@@ -1,62 +1,64 @@
 import cv2
 import threading
+from typing import Optional
 import time
 
+
 class CameraPreviewThread(threading.Thread):
-    def __init__(self, source=0, resolution=(3840, 2160), fps=10, window_name="Camera Feed"):
+    def __init__(self, camera_manager, window_name: str = "Camera Feed"):
+        """
+        Thread for displaying camera preview using shared CameraManager
+
+        Args:
+            camera_manager: Shared camera manager instance
+            window_name: Name of the preview window
+        """
         super().__init__()
-        self.source = source
-        self.resolution = resolution
-        self.fps = fps
+        self.camera_manager = camera_manager
         self.window_name = window_name
 
-        self._lock = threading.Lock()
-        self._frame = None
         self._running = threading.Event()
         self._running.set()
-        self._update_settings_event = threading.Event()
-        self._settings_lock = threading.Lock()
+        self._frame_lock = threading.Lock()
+        self._current_frame = None
 
-        self.capture = None
-        self._init_camera()
-
-    def _init_camera(self):
-        if self.capture is not None:
-            self.capture.release()
-
-        self.capture = cv2.VideoCapture(self.source, cv2.CAP_DSHOW)
-        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
-        self.capture.set(cv2.CAP_PROP_FPS, self.fps)
-        time.sleep(0.5)
-
-    def update_settings(self, source, resolution, fps):
-        with self._settings_lock:
-            self.source = source
-            self.resolution = resolution
-            self.fps = fps
-            self._update_settings_event.set()
+        # Create window in main thread to avoid OpenCV issues
+        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(self.window_name, 1280, 720)
 
     def run(self):
+        """Main preview loop"""
+        print(f"Camera preview thread started for {self.window_name}")
+
         while self._running.is_set():
-            if self._update_settings_event.is_set():
-                with self._settings_lock:
-                    self._init_camera()
-                    self._update_settings_event.clear()
+            try:
+                # Get frame from shared camera manager
+                frame = self.camera_manager.get_frame()
+                if frame is None:
+                    time.sleep(0.01)
+                    continue
 
-            ret, frame = self.capture.read()
-            if not ret:
-                print("Warning: Frame capture failed.")
-                continue
+                # Store frame for external access
+                with self._frame_lock:
+                    self._current_frame = frame.copy()
 
-            with self._lock:
-                self._frame = frame.copy()
+                # Display the frame
+                cv2.imshow(self.window_name, frame)
+                cv2.waitKey(1)
 
-        self.capture.release()
+            except Exception as e:
+                print(f"Preview error: {e}")
+                time.sleep(0.1)
 
-    def get_frame(self):
-        with self._lock:
-            return self._frame.copy() if self._frame is not None else None
+    def get_frame(self) -> Optional[cv2.Mat]:
+        """Get the current preview frame"""
+        with self._frame_lock:
+            return (
+                self._current_frame.copy() if self._current_frame is not None else None
+            )
 
     def stop(self):
+        """Cleanly stop the preview thread"""
         self._running.clear()
+        cv2.destroyWindow(self.window_name)
+        print("Camera preview thread stopped")

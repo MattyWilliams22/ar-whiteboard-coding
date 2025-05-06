@@ -1,36 +1,35 @@
 import cv2
+import threading
+import time
+from settings import settings
 
-TEST_FILE_PATH = "test_images/IMG_1097.JPEG"
 
-class Camera:
-  def __init__(self, debug_mode=False):
-    self.video_source = 1  # Default to the first camera device
-    self.capture = None
-    self.frame = None
-    self.debug_mode = debug_mode
+class CameraManager:
+    def __init__(self, camera_index=0, resolution=(1920, 1080), fps=10):
+        self.cap = cv2.VideoCapture(camera_index)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
+        self.cap.set(cv2.CAP_PROP_FPS, fps)
+        self.lock = threading.Lock()
+        self.current_frame = None
 
-  def __del__(self):
-    if self.capture is not None:
-      self.capture.release()
+    def update_settings(self):
+        """Reinitialize camera with new settings"""
+        self.cap.release()
+        self.cap = cv2.VideoCapture(settings["CAMERA"])
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, settings["CAMERA_RESOLUTION"][0])
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, settings["CAMERA_RESOLUTION"][1])
+        self.cap.set(cv2.CAP_PROP_FPS, settings["CAMERA_FPS"])
 
-  def load_image(self, image_path):
-    image = cv2.imread(image_path)
-    if image is None:
-      return None
+    def get_frame(self):
+        with self.lock:
+            return self.current_frame.copy() if self.current_frame is not None else None
 
-    return image
-
-  def capture_frame(self):
-    if self.debug_mode:
-      if self.frame is None:
-        self.frame = self.load_image(TEST_FILE_PATH)
-      return self.frame
-    
-    if self.capture is None:
-      self.capture = cv2.VideoCapture(self.video_source)
-
-    ret, self.frame = self.capture.read()
-    if not ret:
-      return None
-
-    return self.frame
+    def run(self):
+        while True:
+            ret, frame = self.cap.read()
+            if ret:
+                with self.lock:
+                    self.current_frame = frame
+            # Sleep relative to fps
+            time.sleep(1 / settings["CAMERA_FPS"])

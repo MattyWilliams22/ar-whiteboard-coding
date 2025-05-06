@@ -7,14 +7,13 @@ from settings import settings, save_settings
 
 class SettingsMenu:
     def __init__(
-        self, master, camera_preview=None, voice_thread=None, gesture_thread=None
+        self, master, camera_manager=None, voice_thread=None
     ):
         self.master = master
         master.title("Settings")
 
-        self.camera_preview = camera_preview
+        self.camera_manager = camera_manager
         self.voice_thread = voice_thread
-        self.gesture_thread = gesture_thread
 
         # Create notebook for tabs
         self.notebook = ttk.Notebook(master)
@@ -345,18 +344,11 @@ class SettingsMenu:
 
             save_settings()
 
-            if hasattr(self, "camera_preview") and self.camera_preview is not None:
-                self.camera_preview.update_settings(
-                    source=settings["CAMERA"],
-                    resolution=settings["CAMERA_RESOLUTION"],
-                    fps=settings["CAMERA_FPS"],
-                )
+            if hasattr(self, "camera_manager") and self.camera_manager is not None:
+                self.camera_manager.update_settings()
 
             if hasattr(self, "voice_thread") and self.voice_thread is not None:
                 self.voice_thread.update_settings()
-
-            if hasattr(self, "gesture_thread") and self.gesture_thread is not None:
-                self.gesture_thread.update_settings()
 
             self.master.destroy()
 
