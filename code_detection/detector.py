@@ -35,33 +35,51 @@ class Detector:
         self.aruco_dict_type = aruco_dict_type
         self.all_boxes = []
 
-    def text_box_to_card(self, box):
-        # Find the center of the box
-        centre_x = int((box[0][0] + box[2][0]) / 2)
-        centre_y = int((box[0][1] + box[2][1]) / 2)
+    def text_box_to_card(self, box, aruco_boxes):
+        if not aruco_boxes:
+            raise ValueError("No ArUco boxes provided for scaling reference.")
 
-        # Find the height of the box
-        height = int(abs(box[0][1] - box[2][1]))
+        # Get the text box center (in image coordinates)
+        text_center_x = (box[0][0] + box[2][0]) / 2
+        text_center_y = (box[0][1] + box[2][1]) / 2
 
-        # Calculate unit vector for the box
-        unit_vector = height / 0.87
+        # Check if the first ArUco box is transformed (card) or raw (marker)
+        aruco_sample = aruco_boxes[0][0]  # Take the first box
+        aruco_width = abs(aruco_sample[1][0] - aruco_sample[0][0])
+        aruco_height = abs(aruco_sample[2][1] - aruco_sample[1][1])
 
-        # Calculate new corners based on the center and unit vector
-        top_left = centre_x - 6.1 * unit_vector, centre_y + 1.3 * unit_vector
-        top_right = centre_x + 3.9 * unit_vector, centre_y + 1.3 * unit_vector
-        bottom_left = centre_x - 6.1 * unit_vector, centre_y - 1.3 * unit_vector
-        bottom_right = centre_x + 3.9 * unit_vector, centre_y - 1.3 * unit_vector
+        # Criteria to detect transformed boxes (cards are much wider than tall)
+        is_transformed = (aruco_width / aruco_height) > 3.0
 
-        # Create new box with the new corners
-        new_box = np.array(
-            [
-                [top_left[0], top_left[1]],
-                [top_right[0], top_right[1]],
-                [bottom_right[0], bottom_right[1]],
-                [bottom_left[0], bottom_left[1]],
-            ],
-            dtype=np.float32,
-        )
+        if is_transformed:
+            # If already a card box, use its dimensions directly
+            card_width = aruco_width
+            card_height = aruco_height
+        else:
+            # If raw ArUco box, scale it to card dimensions (10.0 × 2.6 units)
+            card_width = aruco_width * (10.0 / 2.0) * 0.8  # Card is 10 units wide (8.7 - (-1.3))
+            card_height = aruco_height * (2.6 / 2.0)  # Card is 2.6 units tall (1.3 - (-1.3))
+
+        # Compute card position (accounting for text offset)
+        # Text is at (4.8, 0) relative to card's (-1.3, -1.3) to (8.7, 1.3)
+        # So, text is 6.1 units from the left edge (4.8 - (-1.3))
+        # Card's left edge = text_center_x - (6.1 / 10.0) * card_width
+        card_left = text_center_x - (6.1 / 10.0) * card_width
+        card_top = text_center_y - (1.3 / 2.6) * card_height  # Text is vertically centered
+
+        # Compute card corners
+        top_left = (card_left, card_top)
+        top_right = (card_left + card_width, card_top)
+        bottom_left = (card_left, card_top + card_height)
+        bottom_right = (card_left + card_width, card_top + card_height)
+
+        new_box = np.array([
+            [top_left[0], top_left[1]],
+            [top_right[0], top_right[1]],
+            [bottom_right[0], bottom_right[1]],
+            [bottom_left[0], bottom_left[1]],
+        ], dtype=np.float32)
+
         return new_box
 
     def detect_from_image(self, image):
@@ -89,9 +107,10 @@ class Detector:
                 )
 
                 if text_val in ALL_KEYWORDS:
-                    corners = self.text_box_to_card(corners)
-
-                boxes.append((corners, text_val, "ocr"))
+                    corners = self.text_box_to_card(corners, aruco_corners)
+                    boxes.append((corners, text_val, "aruco"))
+                else:
+                    boxes.append((corners, text_val, "ocr"))
 
         if ids is not None:
             for i in range(len(aruco_corners)):

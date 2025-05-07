@@ -29,9 +29,6 @@ import numpy as np
 import cv2
 
 def transform_bounding_boxes_simple(bboxes, ignore=[]):
-    ARUCO_COORDS = np.array([[-1, 1], [1, 1], [1, -1], [-1, -1]], dtype=np.float32)
-    CARD_COORDS = np.array([[-1.3, 1.3], [8.2, 1.3], [8.2, -1.3], [-1.3, -1.3]], dtype=np.float32)
-
     transformed_bboxes = []
 
     for index, bbox in enumerate(bboxes):
