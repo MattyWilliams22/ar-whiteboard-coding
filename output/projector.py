@@ -164,6 +164,9 @@ class Projector:
     ):
         box = np.array(box, dtype=int)
 
+        if text is None or len(text) == 0:
+            text = "..."
+
         # Get bounding box dimensions
         min_x, min_y = np.min(box, axis=0)
         max_x, max_y = np.max(box, axis=0)
