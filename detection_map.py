@@ -35,6 +35,7 @@ def create_mirrored_grid(data):
 def plot_grid(data, save_path=None):
     """
     Plots the heatmap of detected marker percentages with missing values shown as grey.
+    The color scale always spans from 0 to 100%.
     If save_path is provided, the image is saved to that location.
     """
     mirrored_data = create_mirrored_grid(data)
@@ -58,7 +59,7 @@ def plot_grid(data, save_path=None):
 
     # Plot the heatmap
     plt.figure(figsize=(8, 6))
-    plt.imshow(grid, cmap=cmap, interpolation="nearest", aspect="auto", origin="upper")
+    plt.imshow(grid, cmap=cmap, interpolation="nearest", aspect="auto", origin="upper", vmin=0, vmax=100)
 
     # Add labels
     plt.xticks(ticks=np.arange(len(x_values)), labels=x_values, rotation=90)

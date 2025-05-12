@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 COLOR_RANGES = {
         "dark red": (np.array([0, 150, 50]), np.array([10, 255, 150])),
@@ -35,13 +36,16 @@ def closest_color(hsv_pixel):
 def detect_colored_rectangles(image):
     """
     Detects rectangles of multiple colors in an image and assigns unique IDs (color names).
+    Displays the color name next to each detected rectangle.
+    Ignores rectangles that are very small.
     :param image: Input image (BGR format)
-    :return: Image with detected rectangles outlined, dictionary of detected rectangles with their color names
+    :return: Image with detected rectangles outlined, list of detected rectangles, list of color names
     """
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     detected_rectangles = []
     color_ids = []
-    
+    MIN_RECTANGLE_AREA = 500  # Minimum area to consider a rectangle
+
     for color_name, (lower_color, upper_color) in COLOR_RANGES.items():
         mask = cv2.inRange(hsv, lower_color, upper_color)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -51,9 +55,26 @@ def detect_colored_rectangles(image):
             approx = cv2.approxPolyDP(contour, epsilon, True)
             
             if len(approx) == 4:  # Ensure it's a rectangle (4 corners)
+                area = cv2.contourArea(approx)
+                if area < MIN_RECTANGLE_AREA:  # Ignore small rectangles
+                    continue
+                
                 detected_rectangles.append(approx)
                 color_ids.append(color_name)  # The color name is the ID
                 cv2.drawContours(image, [approx], -1, (0, 255, 0), 3)  # Draw rectangle
+                
+                # Calculate the center of the rectangle
+                center_x = int((approx[0][0][0] + approx[2][0][0]) / 2)
+                center_y = int((approx[0][0][1] + approx[2][0][1]) / 2)
+
+                # Set the offset to place the text near the rectangle
+                offset = 20  # Distance to place the text away from the marker
+                text_x = center_x + offset
+                text_y = center_y
+
+                # Draw the corresponding keyword (color name) near the rectangle
+                cv2.putText(image, color_name, (text_x, text_y), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
     
     return image, detected_rectangles, np.array(color_ids, dtype=object) if color_ids else np.array([], dtype=object)
 
@@ -124,14 +145,29 @@ def draw_rectangle_keywords(image, rectangles, ids):
     return image
 
 # Example usage
+
 def main():
-    image = cv2.imread("image.jpg")
+    folder_path = input("Enter the folder path containing JPG images: ")
     
-    result_image, rectangles, ids = detect_colored_rectangles(image)
+    if not os.path.isdir(folder_path):
+        print("Invalid folder path. Please try again.")
+        return
     
-    cv2.imshow("Detected Rectangles", result_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    for file_name in os.listdir(folder_path):
+        if file_name.lower().endswith(".jpg"):
+            file_path = os.path.join(folder_path, file_name)
+            image = cv2.imread(file_path)
+            
+            if image is None:
+                print(f"Failed to read image: {file_name}")
+                continue
+            
+            result_image, rectangles, ids = detect_colored_rectangles(image)
+            
+            # Save the processed image
+            output_path = os.path.join(folder_path, f"processed_{file_name}")
+            cv2.imwrite(output_path, result_image)
+            print(f"Processed and saved: {output_path}")
 
 if __name__ == "__main__":
     main()
