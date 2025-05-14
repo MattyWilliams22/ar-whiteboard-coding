@@ -4,6 +4,7 @@ import threading
 import speech_recognition as sr
 import pvporcupine
 from fsm.states import Event
+from settings import settings
 import time
 
 class VoiceCommandThread(threading.Thread):
@@ -15,9 +16,9 @@ class VoiceCommandThread(threading.Thread):
         self.hotword_sensitivity = hotword_sensitivity  # MOVE THIS UP
         self.command_timeout = command_timeout
         
-        self._running = threading.Event()
-        self._running.set()
         self._needs_restart = threading.Event()
+        self._running = threading.Event()
+        self._stop_flag = threading.Event()
         
         # Initialize speech recognizer
         self.recognizer = sr.Recognizer()
@@ -87,45 +88,56 @@ class VoiceCommandThread(threading.Thread):
         """Trigger a restart with new settings"""
         self._needs_restart.set()
 
+    def set_active(self):
+        self._running.set()
+        print("Voice command thread activated.")
+
+    def set_inactive(self):
+        self._running.clear()
+        print("Voice command thread deactivated.")
+
     def run(self):
-        print("Voice command thread started. Say 'Jarvis' to activate.")
-        while self._running.is_set():
-            if self._needs_restart.is_set():
-                self._initialize_porcupine()
-                self._needs_restart.clear()
-                
-            try:
-                # Listen for hotword
-                pcm = self.audio_stream.read(self.porcupine.frame_length)
-                pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
-                result = self.porcupine.process(pcm)
-                
-                if result >= 0:  # Hotword detected
-                    print("Hotword detected! Listening for command...")
+        while not self._stop_flag.is_set():
+            if self._running.is_set():
+                if self._needs_restart.is_set():
+                    self._initialize_porcupine()
+                    self._needs_restart.clear()
                     
-                    with sr.Microphone(device_index=self.settings["MICROPHONE"]) as source:
-                        self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                        audio = self.recognizer.listen(source, timeout=self.command_timeout)
+                try:
+                    # Listen for hotword
+                    pcm = self.audio_stream.read(self.porcupine.frame_length)
+                    pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
+                    result = self.porcupine.process(pcm)
                     
-                    try:
-                        command = self.recognizer.recognize_google(audio)
-                        print(f"Recognized command: {command}")
-                        event = self._process_command(command)
-                        if event:
-                            self.fsm.transition(event)
-                    except sr.UnknownValueError:
-                        print("Could not understand audio")
-                    except sr.RequestError as e:
-                        print(f"Recognition error: {e}")
-                    except sr.WaitTimeoutError:
-                        print("Listening timed out")
+                    if result >= 0:  # Hotword detected
+                        print("Hotword detected! Listening for command...")
                         
-            except Exception as e:
-                print(f"Voice command error: {e}")
-                time.sleep(0.1)  # Prevent tight loop on errors
+                        with sr.Microphone(device_index=self.settings["MICROPHONE"]) as source:
+                            self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                            audio = self.recognizer.listen(source, timeout=self.command_timeout)
+                        
+                        try:
+                            command = self.recognizer.recognize_google(audio)
+                            print(f"Recognized command: {command}")
+                            event = self._process_command(command)
+                            if event:
+                                self.fsm.transition(event)
+                        except sr.UnknownValueError:
+                            print("Could not understand audio")
+                        except sr.RequestError as e:
+                            print(f"Recognition error: {e}")
+                        except sr.WaitTimeoutError:
+                            print("Listening timed out")
+                            
+                except Exception as e:
+                    print(f"Voice command error: {e}")
+                    time.sleep(0.1)  # Prevent tight loop on errors
+
+            else:
+                time.sleep(1)
 
     def stop(self):
-        self._running.clear()
+        self._stop_flag.set()
         if self.audio_stream is not None:
             self.audio_stream.close()
         if self.pa is not None:

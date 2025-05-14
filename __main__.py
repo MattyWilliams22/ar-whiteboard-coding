@@ -165,19 +165,20 @@ def main():
 
     # Initialize voice thread based on settings
     voice_thread = None
-    if settings["VOICE_COMMANDS"]:
-        try:
-            voice_thread = VoiceCommandThread(
-                fsm=fsm,
-                access_key=os.getenv("PORCUPINE_ACCESS_KEY"),
-                settings=settings,
-                hotword_sensitivity=0.5,
-                command_timeout=3,
-            )
-            voice_thread.start()
-        except Exception as e:
-            print(f"Failed to initialize voice commands: {e}")
-            settings["VOICE_COMMANDS"] = False
+    try:
+        voice_thread = VoiceCommandThread(
+            fsm=fsm,
+            access_key=os.getenv("PORCUPINE_ACCESS_KEY"),
+            settings=settings,
+            hotword_sensitivity=0.5,
+            command_timeout=3,
+        )
+        voice_thread.start()
+        if settings["VOICE_COMMANDS"]:
+            voice_thread.set_active()
+    except Exception as e:
+        print(f"Failed to initialize voice commands: {e}")
+        settings["VOICE_COMMANDS"] = False
 
     show_settings_menu(voice_thread=voice_thread)
 

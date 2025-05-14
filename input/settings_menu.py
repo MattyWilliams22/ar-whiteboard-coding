@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 import sounddevice as sd
 import cv2
 from settings import settings, save_settings
+from input.voice_commands import VoiceCommandThread
+import os
 
 class SettingsMenu:
     def __init__(self, master, camera_preview=None, voice_thread=None):
@@ -261,6 +263,10 @@ class SettingsMenu:
     def on_save(self):
         """Save all settings including helper code"""
         try:
+            # Store previous voice commands state
+            was_voice_enabled = settings["VOICE_COMMANDS"]
+            new_voice_enabled = self.voice_commands_var.get()
+
             # Get requested resolution
             req_width = int(self.cam_res_width.get())
             req_height = int(self.cam_res_height.get())
@@ -318,7 +324,14 @@ class SettingsMenu:
                 )
 
             if hasattr(self, 'voice_thread') and self.voice_thread is not None:
-                self.voice_thread.update_settings()
+                if new_voice_enabled != was_voice_enabled:
+                    if new_voice_enabled:
+                        self.voice_thread.set_active()
+                    else:
+                        self.voice_thread.set_inactive()
+                    self.voice_thread.update_settings()
+                else:
+                    self.voice_thread.update_settings()
 
             self.master.destroy()
 
