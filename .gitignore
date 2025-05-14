@@ -1,4 +1,5 @@
 venv
+gesture_venv
 __pycache__
 output.jpg
 output.txt
