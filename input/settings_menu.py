@@ -194,10 +194,13 @@ class SettingsMenu:
         """Returns list of available cameras with their max resolutions"""
         index = 0
         cameras = []
+        consecutive_failures = 0
+        max_consecutive_failures = 2  # Stop after this many consecutive failures
         
-        while index < 10:  # Check first 10 camera indices
+        while consecutive_failures < max_consecutive_failures:
             cap = cv2.VideoCapture(index)
             if cap.isOpened():
+                consecutive_failures = 0  # Reset counter on success
                 # Get max supported resolution
                 max_res = self._get_max_camera_resolution(cap)
                 cap.release()
@@ -207,8 +210,11 @@ class SettingsMenu:
                     # Generate descriptive name
                     name = self._generate_camera_name(index, width, height)
                     cameras.append((index, name, width, height))  # Store with max res
+            else:
+                consecutive_failures += 1
+                
             index += 1
-    
+        
         return cameras if cameras else [(0, "Default Camera", 640, 480)]  # Fallback
 
     def _get_max_camera_resolution(self, cap):
