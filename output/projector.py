@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import textwrap
 from code_detection.markers.keywords import ALL_KEYWORDS, ALL_CORNER_MARKERS
+from settings import settings
 
 
 class Projector:
@@ -418,7 +419,8 @@ class Projector:
             )  # Red for error box
 
         # Display the ArUco markers in the corners
-        self.display_corner_aruco_markers()
+        if settings["PROJECT_CORNERS"]:
+            self.display_corner_aruco_markers()
 
         return self.output_image
 
@@ -427,7 +429,8 @@ class Projector:
         self.load_output_image()
 
         # Display the ArUco markers in the corners
-        self.display_corner_aruco_markers()
+        if settings["PROJECT_CORNERS"]:
+            self.display_corner_aruco_markers()
 
         return self.output_image
 

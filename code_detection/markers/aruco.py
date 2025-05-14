@@ -2,6 +2,7 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 from code_detection.markers.keywords import get_keyword
+from settings import settings
 
 def transform_bounding_boxes(bboxs):
     ARUCO_COORDS = np.array([[-1, 1], [1, 1], [1, -1], [-1, -1]], dtype=np.float32)
@@ -78,7 +79,7 @@ def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     aruco_params = cv2.aruco.DetectorParameters()
     corners, ids, _ = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
 
-    if ids is not None:
+    if ids is not None and settings["PROJECT_CORNERS"]:
         ignore = [i for i in range(len(ids)) if ids[i] in [46, 47, 48, 49]]
     else:
         ignore = []
