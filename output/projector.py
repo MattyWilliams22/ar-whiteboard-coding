@@ -81,12 +81,8 @@ class Projector:
         if self.boxes is None or len(self.boxes) == 0:
             return
 
-        # Scale and draw each bounding box
+        # Draw each bounding box
         for corners, text in self.boxes:
-            # # Ignore corner markers
-            # if text in ["Top Left", "Top Right", "Bottom Left", "Bottom Right"]:
-            #     continue
-
             colour = self.get_colour(text)
             self.display_bounding_box(corners, colour, filled=True)
 
