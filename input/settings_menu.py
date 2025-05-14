@@ -41,7 +41,10 @@ class SettingsMenu:
         self.camera_dropdown = ttk.Combobox(main_frame, 
                                           values=[f"{i}: {name}" for i, name, _, _ in self.cameras], 
                                           width=50)
-        self.camera_dropdown.current(settings["CAMERA"])
+        if settings["CAMERA"] < len(self.cameras):
+            self.camera_dropdown.current(settings["CAMERA"])
+        else:
+            self.camera_dropdown.current(0)
         self.camera_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
@@ -51,7 +54,10 @@ class SettingsMenu:
         self.mic_dropdown = ttk.Combobox(main_frame, 
                                         values=[f"{i}: {name}" for i, name in self.microphones], 
                                         width=50)
-        self.mic_dropdown.current(settings["MICROPHONE"])
+        if settings["MICROPHONE"] < len(self.microphones):
+            self.mic_dropdown.current(settings["MICROPHONE"])
+        else:
+            self.mic_dropdown.current(0)
         self.mic_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
