@@ -86,7 +86,13 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
 
         suite, tokens, suite_bounds, err = parse_suite(tokens, ["END"])
         function_bounds = get_overall_bounds([function_bounds, suite_bounds])
+        if err:
+            return None, tokens, function_bounds, str(err)
 
+        next, next_bounds = tokens.popleft()
+        if next != "END":
+            raise Exception(f"Expected END after function body, instead found '{next}'")
+        function_bounds = get_overall_bounds([function_bounds, next_bounds])
         next, next_bounds = tokens.popleft()
         if next != "LineBreak":
             raise Exception(
@@ -456,6 +462,51 @@ def parse_try_statement(tokens: deque, try_bounds):
     except Exception as e:
         return None, tokens, try_bounds, str(e)
     
+def parse_class(tokens: deque, class_bounds):
+    try:
+        name, name_bounds = tokens.popleft()
+        class_bounds = get_overall_bounds([class_bounds, name_bounds])
+
+        next, next_bounds = tokens.popleft()
+        while next != "LineBreak":
+            name += next
+            class_bounds = get_overall_bounds([class_bounds, next_bounds])
+            next, next_bounds = tokens.popleft()
+
+        inherits = ""
+        next, next_bounds = tokens.popleft()
+        class_bounds = get_overall_bounds([class_bounds, next_bounds])
+        if next == "TAKE":
+            next, next_bounds = tokens.popleft()
+            while next != "LineBreak":
+                inherits += next + " "
+                class_bounds = get_overall_bounds([class_bounds, next_bounds])
+                next, next_bounds = tokens.popleft()
+
+        suite, tokens, suite_bounds, err = parse_suite(tokens, ["END"])
+        if err:
+            return None, tokens, class_bounds, str(err)
+        class_bounds = get_overall_bounds([class_bounds, suite_bounds])
+
+        next, next_bounds = tokens.popleft()
+        if next != "END":
+            raise Exception(f"Expected END after class body, found '{next}'")
+        class_bounds = get_overall_bounds([class_bounds, next_bounds])
+        next, next_bounds = tokens.popleft()
+        if next != "LineBreak":
+            raise Exception(
+                f"Expected New Line after class body, instead found '{next}'"
+            )
+
+        class_node = ClassNode(
+            class_bounds, Identifier(name_bounds, name), inherits.strip(), suite
+        )
+        print("Parsed class ", class_node.python_print())
+        return class_node, tokens, class_bounds, None
+    except Exception as e:
+        return None, tokens, class_bounds, str(e)
+
+    
 def parse_suite(tokens: deque, end_conditions):
     try:
         out_of_tokens = not tokens
@@ -483,6 +534,8 @@ def parse_suite(tokens: deque, end_conditions):
                 stmt, tokens, stmt_bounds, err = parse_import(tokens, bounds, "FROM")
             elif token == "TRY":
                 stmt, tokens, stmt_bounds, err = parse_try_statement(tokens, bounds)
+            elif token == "CLASS":
+                stmt, tokens, stmt_bounds, err = parse_class(tokens, bounds)
             else:
                 stmt, tokens, stmt_bounds, err = parse_custom_statement(
                     tokens, token, bounds
