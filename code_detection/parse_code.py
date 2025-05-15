@@ -3,6 +3,7 @@ import numpy as np
 from typing import List, Tuple
 from code_detection.astnodes import *
 
+
 def get_overall_bounds(bounds: List[List[Tuple[int, int]]]):
     flat_bounds = []
 
@@ -10,8 +11,11 @@ def get_overall_bounds(bounds: List[List[Tuple[int, int]]]):
         # Ensure box is a list or tuple and has at least one valid point
         if isinstance(box, (list, tuple)) and len(box) > 0:
             for point in box:
-                if (isinstance(point, (list, tuple)) and len(point) == 2 
-                    and all(isinstance(coord, (int, float)) for coord in point)):
+                if (
+                    isinstance(point, (list, tuple))
+                    and len(point) == 2
+                    and all(isinstance(coord, (int, float)) for coord in point)
+                ):
                     flat_bounds.append(point)
 
     if not flat_bounds:
@@ -19,10 +23,10 @@ def get_overall_bounds(bounds: List[List[Tuple[int, int]]]):
 
     xs, ys = zip(*flat_bounds)
     return [
-        (min(xs), min(ys)), 
-        (max(xs), min(ys)), 
-        (max(xs), max(ys)), 
-        (min(xs), max(ys))
+        (min(xs), min(ys)),
+        (max(xs), min(ys)),
+        (max(xs), max(ys)),
+        (min(xs), max(ys)),
     ]
 
 
@@ -37,14 +41,21 @@ def parse_statement(tokens: deque):
             return parse_return(tokens, next_bounds)
         elif next == "FOR":
             return parse_for(tokens, next_bounds)
-        elif next == "While":
+        elif next == "WHILE":
             return parse_while(tokens, next_bounds)
         elif next == "CALL":
             return parse_call(tokens, next_bounds)
+        elif next == "IMPORT":
+            return parse_import(tokens, next_bounds, "IMPORT")
+        elif next == "FROM":
+            return parse_import(tokens, next_bounds, "FROM")
+        elif next == "TRY":
+            return parse_try_statement(tokens, next_bounds)
         else:
             return parse_custom_statement(tokens, next, next_bounds)
     except Exception as e:
         return None, tokens, next_bounds, str(e)
+
 
 def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
     try:
@@ -54,7 +65,9 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
         next, next_bounds = tokens.popleft()
         function_bounds = get_overall_bounds([function_bounds, next_bounds])
         if next != "LineBreak":
-            raise Exception(f"Expected New Line after function name '{name}', instead found '{next}'")
+            raise Exception(
+                f"Expected New Line after function name '{name}', instead found '{next}'"
+            )
 
         args = ""
         next, next_bounds = tokens.popleft()
@@ -88,15 +101,21 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
 
         next, next_bounds = tokens.popleft()
         if next != "LineBreak":
-            raise Exception(f"Expected New Line after function body, instead found '{next}'")
+            raise Exception(
+                f"Expected New Line after function body, instead found '{next}'"
+            )
 
-        function = Function(function_bounds, Identifier(name_bounds, name), args, statements)
+        function = Function(
+            function_bounds, Identifier(name_bounds, name), args, statements
+        )
         print("Parsed function ", function.python_print())
         return function, tokens, function_bounds, None
     except Exception as e:
         return None, tokens, function_bounds, str(e)
 
+
 # --- All parse_* functions below follow same pattern: returning (stmt, tokens, bounds, error_message) ---
+
 
 def parse_print(tokens: deque, print_bounds):
     try:
@@ -113,11 +132,16 @@ def parse_print(tokens: deque, print_bounds):
             expr_bounds = get_overall_bounds([expr_bounds, next_bounds])
             next, next_bounds = tokens.popleft()
 
-        stmt = PrintStatement(get_overall_bounds([print_bounds, expr_bounds]), Expr(expr_bounds, expr), toString)
+        stmt = PrintStatement(
+            get_overall_bounds([print_bounds, expr_bounds]),
+            Expr(expr_bounds, expr),
+            toString,
+        )
         print("Parsed print statement ", stmt.python_print())
         return stmt, tokens, stmt.bounds, None
     except Exception as e:
         return None, tokens, print_bounds, str(e)
+
 
 def parse_return(tokens: deque, return_bounds):
     try:
@@ -128,11 +152,14 @@ def parse_return(tokens: deque, return_bounds):
             expr_bounds = get_overall_bounds([expr_bounds, next_bounds])
             next, next_bounds = tokens.popleft()
 
-        stmt = ReturnStatement(get_overall_bounds([return_bounds, expr_bounds]), Expr(expr_bounds, expr))
+        stmt = ReturnStatement(
+            get_overall_bounds([return_bounds, expr_bounds]), Expr(expr_bounds, expr)
+        )
         print("Parsed return statement ", stmt.python_print())
         return stmt, tokens, stmt.bounds, None
     except Exception as e:
         return None, tokens, return_bounds, str(e)
+
 
 def parse_condition(tokens: deque):
     try:
@@ -146,6 +173,7 @@ def parse_condition(tokens: deque):
         return Expr(bounds, condition), tokens, bounds
     except Exception as e:
         return None, tokens, next_bounds
+
 
 def parse_statement_block(tokens: deque, end_conditions):
     try:
@@ -164,6 +192,7 @@ def parse_statement_block(tokens: deque, end_conditions):
     except Exception as e:
         return None, next_bounds, None, None, str(e)
 
+
 def parse_if_statement(tokens: deque, if_bounds):
     try:
         conditions = []
@@ -180,7 +209,9 @@ def parse_if_statement(tokens: deque, if_bounds):
                 if next != "THEN":
                     raise Exception(f"Expected THEN after condition, found '{next}'")
 
-            body, body_bounds, next, next_bounds, err = parse_statement_block(tokens, ["END", "ELSE IF", "ELSE"])
+            body, body_bounds, next, next_bounds, err = parse_statement_block(
+                tokens, ["END", "ELSE IF", "ELSE"]
+            )
             if err:
                 raise Exception(err)
             bodies.append(body)
@@ -195,6 +226,7 @@ def parse_if_statement(tokens: deque, if_bounds):
         return stmt, tokens, if_bounds, None
     except Exception as e:
         return None, tokens, if_bounds, str(e)
+
 
 def parse_custom_statement(tokens: deque, token, statement_bounds):
     try:
@@ -221,6 +253,7 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
     except Exception as e:
         return None, tokens, statement_bounds, str(e)
 
+
 def parse_while(tokens: deque, while_bounds):
     try:
         condition, tokens, cond_bounds = parse_condition(tokens)
@@ -229,7 +262,9 @@ def parse_while(tokens: deque, while_bounds):
         if next != "DO":
             raise Exception(f"Expected DO after condition, found '{next}'")
         while_bounds = get_overall_bounds([while_bounds, next_bounds])
-        body, body_bounds, next, next_bounds, err = parse_statement_block(tokens, ["END"])
+        body, body_bounds, next, next_bounds, err = parse_statement_block(
+            tokens, ["END"]
+        )
         if err:
             raise Exception(err)
         next, next_bounds = tokens.popleft()
@@ -241,6 +276,7 @@ def parse_while(tokens: deque, while_bounds):
         return stmt, tokens, while_bounds, None
     except Exception as e:
         return None, tokens, while_bounds, str(e)
+
 
 def parse_for(tokens: deque, for_bounds):
     try:
@@ -266,7 +302,9 @@ def parse_for(tokens: deque, for_bounds):
 
         if next != "DO":
             raise Exception(f"Expected DO, found '{next}'")
-        body, body_bounds, next, next_bounds, err = parse_statement_block(tokens, ["END"])
+        body, body_bounds, next, next_bounds, err = parse_statement_block(
+            tokens, ["END"]
+        )
         if err:
             raise Exception(err)
 
@@ -274,13 +312,18 @@ def parse_for(tokens: deque, for_bounds):
         if next != "LineBreak":
             raise Exception(f"Expected New Line after for loop, found '{next}'")
 
-        stmt = ForStatement(for_bounds, Identifier(count_bounds, count),
-                            Expr(lower_bounds, lower_bound),
-                            Expr(upper_bounds, upper_bound), body)
+        stmt = ForStatement(
+            for_bounds,
+            Identifier(count_bounds, count),
+            Expr(lower_bounds, lower_bound),
+            Expr(upper_bounds, upper_bound),
+            body,
+        )
         print("Parsed for statement ", stmt.python_print())
         return stmt, tokens, stmt.bounds, None
     except Exception as e:
         return None, tokens, for_bounds, str(e)
+
 
 def parse_call(tokens: deque, call_bounds):
     try:
@@ -289,7 +332,9 @@ def parse_call(tokens: deque, call_bounds):
         next, next_bounds = tokens.popleft()
         call_bounds = get_overall_bounds([call_bounds, next_bounds])
         if next != "WITH" and next != "LineBreak":
-            raise Exception(f"Expected WITH or New Line after function name, found '{next}'")
+            raise Exception(
+                f"Expected WITH or New Line after function name, found '{next}'"
+            )
         if next == "LineBreak":
             stmt = Call(call_bounds, func_name, [])
             print("Parsed call statement ", stmt.python_print())
@@ -302,14 +347,133 @@ def parse_call(tokens: deque, call_bounds):
             call_bounds = get_overall_bounds([call_bounds, next_bounds])
             next, next_bounds = tokens.popleft()
 
-        stmt = Call(call_bounds, func_name, [arg.strip() for arg in args.strip().split(",") if arg.strip()])
+        stmt = Call(
+            call_bounds,
+            func_name,
+            [arg.strip() for arg in args.strip().split(",") if arg.strip()],
+        )
         print("Parsed call statement ", stmt.python_print())
         return stmt, tokens, call_bounds, None
     except Exception as e:
         return None, tokens, call_bounds, str(e)
 
+
+def parse_import(tokens: deque, import_bounds, import_type):
+    try:
+        module = None
+        alias = None
+
+        if import_type == "FROM":
+            module, module_bounds = tokens.popleft()
+            import_bounds = get_overall_bounds([import_bounds, module_bounds])
+            next, next_bounds = tokens.popleft()
+            while next != "IMPORT":
+                module += next
+                import_bounds = get_overall_bounds([import_bounds, next_bounds])
+                next, next_bounds = tokens.popleft()
+
+        imported, imported_bounds = tokens.popleft()
+        import_bounds = get_overall_bounds([import_bounds, imported_bounds])
+        next, next_bounds = tokens.popleft()
+        while next != "LineBreak" and next != "AS":
+            imported += next
+            import_bounds = get_overall_bounds([import_bounds, next_bounds])
+            next, next_bounds = tokens.popleft()
+
+        if next == "AS":
+            import_bounds = get_overall_bounds([import_bounds, next_bounds])
+            alias, alias_bounds = tokens.popleft()
+            import_bounds = get_overall_bounds([import_bounds, alias_bounds])
+            next, next_bounds = tokens.popleft()
+            while next != "LineBreak":
+                alias += next
+                import_bounds = get_overall_bounds([import_bounds, next_bounds])
+                next, next_bounds = tokens.popleft()
+
+        stmt = ImportStatement(import_bounds, imported, module=module, alias=alias)
+        print("Parsed import statement ", stmt.python_print())
+        return stmt, tokens, import_bounds, None
+    except Exception as e:
+        return None, tokens, import_bounds, str(e)
+
+
+def parse_try_statement(tokens: deque, try_bounds):
+    try:
+        exception_names = []
+        catch_bodies = []
+        else_body = None
+        finally_body = None
+
+        next, next_bounds = tokens.popleft()
+        if next != "LineBreak":
+            raise Exception(f"Expected New Line after TRY, found '{next}'")
+        try_body, body_bounds, next, next_bounds, err = parse_statement_block(
+            tokens, ["CATCH", "ELSE", "FINALLY", "END"]
+        )
+        if err:
+            raise Exception(err)
+        try_bounds = get_overall_bounds([try_bounds, body_bounds])
+
+        while next == "CATCH":
+            exception_name, exception_bounds = tokens.popleft()
+            if exception_name == "LineBreak":
+                exception_name = ""
+            else:
+                try_bounds = get_overall_bounds([try_bounds, exception_bounds])
+                next, next_bounds = tokens.popleft()
+                while next != "LineBreak":
+                    exception_name += " " + next
+                    try_bounds = get_overall_bounds([try_bounds, next_bounds])
+                    next, next_bounds = tokens.popleft()
+
+            catch_body, catch_body_bounds, next, next_bounds, err = (
+                parse_statement_block(tokens, ["CATCH", "ELSE", "FINALLY", "END"])
+            )
+            if err:
+                raise Exception(err)
+            try_bounds = get_overall_bounds([try_bounds, catch_body_bounds])
+            exception_names.append(exception_name)
+            catch_bodies.append(catch_body)
+
+        if next == "ELSE":
+            next, next_bounds = tokens.popleft()
+            if next != "LineBreak":
+                raise Exception(f"Expected New Line after ELSE, found '{next}'")
+            else_body, else_body_bounds, next, next_bounds, err = parse_statement_block(
+                tokens, ["FINALLY", "END"]
+            )
+            if err:
+                raise Exception(err)
+            try_bounds = get_overall_bounds([try_bounds, else_body_bounds])
+
+        if next == "FINALLY":
+            next, next_bounds = tokens.popleft()
+            if next != "LineBreak":
+                raise Exception(f"Expected New Line after FINALLY, found '{next}'")
+            finally_body, finally_body_bounds, next, next_bounds, err = (
+                parse_statement_block(tokens, ["END"])
+            )
+            if err:
+                raise Exception(err)
+            try_bounds = get_overall_bounds([try_bounds, finally_body_bounds])
+
+        if next != "END":
+            raise Exception(f"Expected END after try statement, found '{next}'")
+        next, next_bounds = tokens.popleft()
+        if next != "LineBreak":
+            raise Exception(f"Expected New Line after END, found '{next}'")
+
+        stmt = TryStatement(
+            try_bounds, try_body, exception_names, catch_bodies, else_body, finally_body
+        )
+        print("Parsed try statement ", stmt.python_print())
+        return stmt, tokens, try_bounds, None
+    except Exception as e:
+        return None, tokens, try_bounds, str(e)
+
+
 def parse_code(tokens: deque):
-    program = Program([(0,0), (0,0), (0,0), (0,0)], [], [])
+    program = Program([(0, 0), (0, 0), (0, 0), (0, 0)], [], [])
     while len(tokens) > 0:
         try:
             token, bounds = tokens.popleft()
@@ -327,8 +491,16 @@ def parse_code(tokens: deque):
                 stmt, tokens, stmt_bounds, err = parse_while(tokens, bounds)
             elif token == "CALL":
                 stmt, tokens, stmt_bounds, err = parse_call(tokens, bounds)
+            elif token == "IMPORT":
+                stmt, tokens, stmt_bounds, err = parse_import(tokens, bounds, "IMPORT")
+            elif token == "FROM":
+                stmt, tokens, stmt_bounds, err = parse_import(tokens, bounds, "FROM")
+            elif token == "TRY":
+                stmt, tokens, stmt_bounds, err = parse_try_statement(tokens, bounds)
             else:
-                stmt, tokens, stmt_bounds, err = parse_custom_statement(tokens, token, bounds)
+                stmt, tokens, stmt_bounds, err = parse_custom_statement(
+                    tokens, token, bounds
+                )
 
             if err:
                 return program, err, stmt_bounds

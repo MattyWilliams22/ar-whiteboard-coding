@@ -15,3 +15,5 @@ from .return_stmt import ReturnStatement
 from .for_stmt import ForStatement
 from .call import Call
 from .assign_call import AssignCall
+from .import_stmt import ImportStatement
+from .try_stmt import TryStatement

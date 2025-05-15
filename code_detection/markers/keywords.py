@@ -19,6 +19,11 @@ ALL_KEYWORDS = {
     "FROM",
     "TO",
     "STR",
+    "IMPORT",
+    "AS",
+    "TRY",
+    "CATCH",
+    "FINALLY",
 }
 
 ALL_CORNER_MARKERS = {
@@ -65,6 +70,10 @@ def get_keyword(index):
             return "TO"
         case 16:
             return "STR"
+        case 17:
+            return "IMPORT"
+        case 18:
+            return "AS"
         case 44:
             return "PYTHON:"
         case 45:
