@@ -79,25 +79,13 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
                 function_bounds = get_overall_bounds([function_bounds, next_bounds])
                 next, next_bounds = tokens.popleft()
 
-        args = [arg.strip() for arg in args.strip().split(",") if arg.strip()]
-
         next, next_bounds = tokens.popleft()
         function_bounds = get_overall_bounds([function_bounds, next_bounds])
         if next != "DO":
             raise Exception(f"Expected DO block, instead found '{next}'")
 
-        statements = []
-        next, next_bounds = tokens.popleft()
-        function_bounds = get_overall_bounds([function_bounds, next_bounds])
-        while next != "END":
-            tokens.appendleft((next, next_bounds))
-            stmt, tokens, stmt_bounds, err = parse_statement(tokens)
-            if err:
-                raise Exception(err)
-            function_bounds = get_overall_bounds([function_bounds, stmt_bounds])
-            statements.append(stmt)
-            next, next_bounds = tokens.popleft()
-        function_bounds = get_overall_bounds([function_bounds, next_bounds])
+        suite, tokens, suite_bounds, err = parse_suite(tokens, ["END"])
+        function_bounds = get_overall_bounds([function_bounds, suite_bounds])
 
         next, next_bounds = tokens.popleft()
         if next != "LineBreak":
@@ -106,15 +94,12 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
             )
 
         function = Function(
-            function_bounds, Identifier(name_bounds, name), args, statements
+            function_bounds, Identifier(name_bounds, name), args.strip(), suite
         )
         print("Parsed function ", function.python_print())
         return function, tokens, function_bounds, None
     except Exception as e:
         return None, tokens, function_bounds, str(e)
-
-
-# --- All parse_* functions below follow same pattern: returning (stmt, tokens, bounds, error_message) ---
 
 
 def parse_print(tokens: deque, print_bounds):
@@ -350,7 +335,7 @@ def parse_call(tokens: deque, call_bounds):
         stmt = Call(
             call_bounds,
             func_name,
-            [arg.strip() for arg in args.strip().split(",") if arg.strip()],
+            args.strip(),
         )
         print("Parsed call statement ", stmt.python_print())
         return stmt, tokens, call_bounds, None
@@ -470,13 +455,14 @@ def parse_try_statement(tokens: deque, try_bounds):
         return stmt, tokens, try_bounds, None
     except Exception as e:
         return None, tokens, try_bounds, str(e)
-
-
-def parse_code(tokens: deque):
-    program = Program([(0, 0), (0, 0), (0, 0), (0, 0)], [], [])
-    while len(tokens) > 0:
-        try:
-            token, bounds = tokens.popleft()
+    
+def parse_suite(tokens: deque, end_conditions):
+    try:
+        out_of_tokens = not tokens
+        nodes = []
+        token, token_bounds = tokens.popleft()
+        suite_bounds = token_bounds
+        while token not in end_conditions and not out_of_tokens:
             if token == "FUNCTION":
                 stmt, tokens, stmt_bounds, err = parse_function(tokens, bounds)
             elif token == "PRINT":
@@ -501,13 +487,40 @@ def parse_code(tokens: deque):
                 stmt, tokens, stmt_bounds, err = parse_custom_statement(
                     tokens, token, bounds
                 )
-
-            if err:
-                return program, err, stmt_bounds
-            if isinstance(stmt, Function):
-                program.add_function(stmt)
+            
+            if err is not None:
+                return None, tokens, suite_bounds, str(err)
+            suite_bounds = get_overall_bounds([suite_bounds, stmt_bounds])
+            nodes.append(stmt)
+            if tokens:
+                token, bounds = tokens.popleft()
             else:
-                program.add_statement(stmt)
-        except Exception as e:
-            return program, str(e), bounds
-    return program, None, None
+                out_of_tokens = True
+
+        suite = Suite(suite_bounds, nodes)
+        if not out_of_tokens:
+            tokens.appendleft((token, bounds))
+        print("Parsed suite ", suite.python_print())
+        return suite, tokens, suite_bounds, None
+    
+    except Exception as e:
+        return None, tokens, suite_bounds, str(e)
+
+
+def parse_code(tokens: deque):
+    try:
+        suite, tokens, suite_bounds, err = parse_suite(tokens, [])
+        if err:
+            return None, err, suite_bounds
+        if tokens:
+            next, next_bounds = tokens.popleft()
+            token_bounds = next_bounds
+            while tokens:
+                next, next_bounds = tokens.popleft()
+                token_bounds = get_overall_bounds([token_bounds, next_bounds])
+            return None, "Unexpected tokens after parsing program", token_bounds
+        program = Program(suite_bounds, suite)
+        print("Parsed program ", program.python_print())
+        return program, None, None
+    except Exception as e:
+        return None, str(e), suite_bounds
