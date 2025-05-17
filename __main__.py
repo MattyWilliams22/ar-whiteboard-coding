@@ -52,6 +52,7 @@ def process_images(warped_images):
 
     tokeniser = Tokeniser(boxes)
     tokens = tokeniser.tokenise()
+    print(tokeniser.tokens_to_string())
     if tokens is None:
         return warped_image, boxes, None, "Error: Tokenisation failed", None
 

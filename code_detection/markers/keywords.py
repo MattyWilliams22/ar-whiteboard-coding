@@ -12,6 +12,7 @@ ALL_KEYWORDS = {
     "PRINT",
     "RETURN",
     "ELSE IF",
+    "ELSEIF",
     "END",
     "TAKE",
     "CALL",

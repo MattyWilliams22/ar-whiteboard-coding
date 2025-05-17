@@ -192,7 +192,8 @@ def parse_if_statement(tokens: deque, if_bounds):
         if_bounds = get_overall_bounds([if_bounds, next_bounds])
         while next != "END":
             if next != "ELSE":
-                tokens.appendleft((next, next_bounds))
+                if next != "ELSE IF":
+                    tokens.appendleft((next, next_bounds))
                 condition, tokens, cond_bounds = parse_condition(tokens)
                 conditions.append(condition)
                 if_bounds = get_overall_bounds([if_bounds, cond_bounds])
@@ -291,8 +292,10 @@ def parse_for(tokens: deque, for_bounds):
             upper_bounds = get_overall_bounds([upper_bounds, next_bounds])
             next, next_bounds = tokens.popleft()
 
+        next, next_bounds = tokens.popleft()
         if next != "DO":
             raise Exception(f"Expected DO, found '{next}'")
+        for_bounds = get_overall_bounds([for_bounds, next_bounds])
         body, body_bounds, next, next_bounds, err = parse_statement_block(
             tokens, ["END"]
         )
@@ -515,30 +518,30 @@ def parse_suite(tokens: deque, end_conditions):
         suite_bounds = token_bounds
         while token not in end_conditions and not out_of_tokens:
             if token == "FUNCTION":
-                stmt, tokens, stmt_bounds, err = parse_function(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_function(tokens, token_bounds)
             elif token == "PRINT":
-                stmt, tokens, stmt_bounds, err = parse_print(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_print(tokens, token_bounds)
             elif token == "IF":
-                stmt, tokens, stmt_bounds, err = parse_if_statement(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_if_statement(tokens, token_bounds)
             elif token == "RETURN":
-                stmt, tokens, stmt_bounds, err = parse_return(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_return(tokens, token_bounds)
             elif token == "FOR":
-                stmt, tokens, stmt_bounds, err = parse_for(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_for(tokens, token_bounds)
             elif token == "WHILE":
-                stmt, tokens, stmt_bounds, err = parse_while(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_while(tokens, token_bounds)
             elif token == "CALL":
-                stmt, tokens, stmt_bounds, err = parse_call(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_call(tokens, token_bounds)
             elif token == "IMPORT":
-                stmt, tokens, stmt_bounds, err = parse_import(tokens, bounds, "IMPORT")
+                stmt, tokens, stmt_bounds, err = parse_import(tokens, token_bounds, "IMPORT")
             elif token == "FROM":
-                stmt, tokens, stmt_bounds, err = parse_import(tokens, bounds, "FROM")
+                stmt, tokens, stmt_bounds, err = parse_import(tokens, token_bounds, "FROM")
             elif token == "TRY":
-                stmt, tokens, stmt_bounds, err = parse_try_statement(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_try_statement(tokens, token_bounds)
             elif token == "CLASS":
-                stmt, tokens, stmt_bounds, err = parse_class(tokens, bounds)
+                stmt, tokens, stmt_bounds, err = parse_class(tokens, token_bounds)
             else:
                 stmt, tokens, stmt_bounds, err = parse_custom_statement(
-                    tokens, token, bounds
+                    tokens, token, token_bounds
                 )
             
             if err is not None:

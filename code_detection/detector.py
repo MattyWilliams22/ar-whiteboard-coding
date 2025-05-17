@@ -117,8 +117,10 @@ class Detector:
                     [[startX, startY], [endX, startY], [endX, endY], [startX, endY]]
                 )
 
-                if text_val in ALL_KEYWORDS:
+                if text_val.upper() in ALL_KEYWORDS:
                     corners = self.text_box_to_card(corners, aruco_corners)
+                    if text_val.upper() == "ELSEIF":
+                        text_val = "ELSE IF"
                     boxes.append((corners, text_val, "aruco", image_id))
                 else:
                     boxes.append((corners, text_val, "ocr", image_id))

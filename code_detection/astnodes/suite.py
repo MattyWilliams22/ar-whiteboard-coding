@@ -12,4 +12,5 @@ class Suite(Node):
         suite_str = ""
         for node in self.nodes:
             suite_str += node.python_print()
-        return suite_str
+            suite_str += "\n"
+        return suite_str.rstrip()

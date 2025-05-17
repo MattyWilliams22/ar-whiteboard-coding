@@ -62,6 +62,7 @@ class Executor:
 
   def execute_in_sandbox(self):
     full_code = self._combine_code()
+    print("Full code: " + full_code)
     self.output = None
     self.error_message = None
 

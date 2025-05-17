@@ -51,10 +51,10 @@ class Parser:
             normalised_char = HOMOGLYPHS.get(char, char)
             
             # Normalise Unicode (e.g., fullwidth to ASCII)
-            if unicodedata.category(normalized_char) == 'So':  # Other symbols
-                normalized_char = unicodedata.normalize('NFKC', normalized_char)
+            if unicodedata.category(normalised_char) == 'So':  # Other symbols
+                normalised_char = unicodedata.normalize('NFKC', normalised_char)
             
-            normalised_content.append(normalized_char)
+            normalised_content.append(normalised_char)
         
         # Reconstruct line with original indentation
         normalised_line = indentation + ''.join(normalised_content)
