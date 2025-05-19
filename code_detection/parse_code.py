@@ -479,7 +479,7 @@ def parse_class(tokens: deque, class_bounds):
         inherits = ""
         next, next_bounds = tokens.popleft()
         class_bounds = get_overall_bounds([class_bounds, next_bounds])
-        if next == "TAKE":
+        if next == "FROM":
             next, next_bounds = tokens.popleft()
             while next != "LineBreak":
                 inherits += next + " "

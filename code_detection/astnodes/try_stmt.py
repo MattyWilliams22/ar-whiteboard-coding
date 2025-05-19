@@ -9,6 +9,7 @@ class TryStatement(Statement):
         self.try_body = try_body
         self.exception_names = exception_names
         self.catch_bodies = catch_bodies
+        self.else_body = else_body
         self.finally_body = finally_body
         
     def python_print(self):
