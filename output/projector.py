@@ -71,9 +71,9 @@ class Projector:
             return (0, 255, 255, 255)  # Yellow for keywords
         elif text in ALL_CORNER_MARKERS:
             return (203, 255, 192, 255)  # Pink for corner markers
-        elif text == "PYTHON:":
+        elif text == "PYTHON":
             return (255, 0, 255, 255)  # Purple for Python marker
-        elif text == "OUTPUT:":
+        elif text == "RESULTS":
             return (50, 50, 50, 255)  # Black for Output marker
         else:
             return (255, 255, 0, 255)  # Light blue for other text
@@ -223,7 +223,7 @@ class Projector:
         self.display_bounding_box(box, colour, thickness=2)
 
     def find_boxes(self):
-        # Find the markers for "PYTHON:" and "OUTPUT:"
+        # Find the markers for "PYTHON" and "RESULTS"
         python_marker = None
         output_marker = None
         existing_boxes = []
@@ -232,9 +232,9 @@ class Projector:
             return None, None
 
         for corners, text in self.boxes:
-            if text == "PYTHON:":
+            if text == "PYTHON":
                 python_marker = corners
-            elif text == "OUTPUT:":
+            elif text == "RESULTS":
                 output_marker = corners
             existing_boxes.append(corners)
 

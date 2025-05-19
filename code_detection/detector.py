@@ -107,10 +107,6 @@ class Detector:
             for line in text[0]:
                 box, prediction = line
                 text_val, _ = prediction
-                if text_val == "PYTHON":
-                    text_val = "PYTHON:"
-                elif text_val == "OUTPUT":
-                    text_val = "OUTPUT:"
                 startX, startY = int(box[0][0]), int(box[0][1])
                 endX, endY = int(box[2][0]), int(box[2][1])
                 corners = np.array(

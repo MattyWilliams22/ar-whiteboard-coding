@@ -17,7 +17,7 @@ class Tokeniser:
             coordinates = item[0]  # Bounding box (numpy array of shape (4,2))
             text = item[1]         # Extract the text directly (string)
 
-            if text in ["PYTHON:", "OUTPUT:", "Bottom Left", "Bottom Right", "Top Right", "Top Left", "UNKNOWN"]:
+            if text in ["PYTHON", "RESULTS", "Bottom Left", "Bottom Right", "Top Right", "Top Left", "UNKNOWN"]:
                 continue
 
             # Calculate the height of the bounding box

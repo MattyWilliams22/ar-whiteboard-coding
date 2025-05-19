@@ -85,9 +85,9 @@ def get_keyword(index):
         case 22:
             return "CLASS"
         case 44:
-            return "PYTHON:"
+            return "PYTHON"
         case 45:
-            return "OUTPUT:"
+            return "RESULTS"
         case 46:
             return "Bottom Left"
         case 47:
