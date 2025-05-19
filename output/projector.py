@@ -418,10 +418,6 @@ class Projector:
                 self.error_box, (0, 0, 255, 255), filled=True
             )  # Red for error box
 
-        # Display the ArUco markers in the corners
-        if settings["PROJECT_CORNERS"]:
-            self.display_corner_aruco_markers()
-
         return self.output_image
 
     def display_minimal_projection(self):
