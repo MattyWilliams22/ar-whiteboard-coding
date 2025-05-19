@@ -351,16 +351,18 @@ class Projector:
                 # Find the overlapping region and adjust the boxes
                 py_min_x, py_min_y, py_max_x, py_max_y = get_bbox_extents(py_box)
                 out_min_x, out_min_y, out_max_x, out_max_y = get_bbox_extents(out_box)
-
-                if py_min_x < out_min_x:
-                    # Python box is to the left of Output box, split vertically
+                
+                x_diff = out_min_x - py_max_x
+                y_diff = out_min_y - py_max_y
+                if abs(x_diff) > abs(y_diff):
+                    # Split vertically
                     split_x = (out_min_x + py_max_x) / 2
                     py_box[1][0] = split_x
                     py_box[2][0] = split_x
                     out_box[0][0] = split_x
                     out_box[3][0] = split_x
                 else:
-                    # Python box is to the right of Output box or same x, split horizontally
+                    # Split horizontally
                     split_y = (out_min_y + py_max_y) / 2
                     py_box[2][1] = split_y
                     py_box[3][1] = split_y
