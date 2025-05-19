@@ -236,6 +236,29 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
             stmt = AssignCall(statement_bounds, token.strip(), call_stmt)
             print("Parsed assign call statement ", stmt.python_print())
             return stmt, tokens, statement_bounds, None
+        if next == "CLASS":
+            class_name, class_bounds = tokens.popleft()
+            statement_bounds = get_overall_bounds([statement_bounds, class_bounds])
+            next, next_bounds = tokens.popleft()
+            if next not in ["LineBreak", "WITH"]:
+                class_name += next
+                class_bounds = get_overall_bounds([class_bounds, next_bounds])
+                next, next_bounds = tokens.popleft()
+            class_args = ""
+            if next == "WITH":
+                next, next_bounds = tokens.popleft()
+                while next != "LineBreak":
+                    class_args += next + " "
+                    class_bounds = get_overall_bounds([class_bounds, next_bounds])
+                    next, next_bounds = tokens.popleft()
+            if next != "LineBreak":
+                raise Exception(f"Expected New Line after class assignment, found '{next}'")
+            if err:
+                raise Exception(err)
+            statement_bounds = get_overall_bounds([statement_bounds, class_bounds])
+            stmt = AssignClass(statement_bounds, token.strip(), class_name, class_args.strip())
+            print("Parsed assign class statement ", stmt.python_print())
+            return stmt, tokens, statement_bounds, None
         elif next != "LineBreak":
             raise Exception(f"Expected New Line after statement, found '{next}'")
 

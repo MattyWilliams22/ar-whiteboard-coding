@@ -19,3 +19,4 @@ from .import_stmt import ImportStatement
 from .try_stmt import TryStatement
 from .suite import Suite
 from .class_node import ClassNode
+from .assign_class import AssignClass
