@@ -62,7 +62,7 @@ def process_images(warped_images):
         return warped_image, boxes, python_code, error_message, error_box
 
     executor = Executor(python_code)
-    code_output, error_message = executor.execute_in_sandbox()
+    code_output, error_message, python_code = executor.execute_in_sandbox()
     if error_message is not None:
         return warped_image, boxes, python_code, error_message, None
     if code_output is None:

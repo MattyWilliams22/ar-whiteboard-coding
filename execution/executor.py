@@ -107,9 +107,9 @@ class Executor:
       shutil.rmtree(temp_dir)
 
     if self.error_message:
-      return None, self.error_message
+      return None, self.error_message, full_code
 
     if not self.output:
       self.output = None
 
-    return self.output, None
+    return self.output, None, full_code
