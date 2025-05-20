@@ -440,6 +440,37 @@ class Projector:
                 self.error_box, (0, 0, 255, 255), filled=True
             )  # Red for error box
 
+        return self.output_image, py_box
+    
+    def display_idle_projection(self, code_box=None):
+        # Reset output_image
+        self.load_output_image()
+
+        if code_box is None:
+            # Define coordinates for a box on the right side of the image
+            box_width = int(self.output_size[0] * 0.2)
+            box_height = int(self.output_size[1] * 0.4)
+            box_x = int(self.output_size[0] * 0.8)
+            box_y = int(self.output_size[1] * 0.3)
+            code_box = np.array(
+                [
+                    [box_x, box_y],
+                    [box_x + box_width, box_y],
+                    [box_x + box_width, box_y + box_height],
+                    [box_x, box_y + box_height],
+                ],
+                dtype=int,
+            )
+        
+        # Display the helper code in the box
+        self.display_text_in_box(
+                settings["HELPER_CODE"],
+                code_box,
+                font_scale=0.6,
+                font=cv2.FONT_HERSHEY_SIMPLEX,
+                thickness=1,
+            )
+
         return self.output_image
 
     def display_minimal_projection(self):

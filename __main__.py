@@ -103,7 +103,7 @@ def run_code_from_frame(preview, fsm):
             ).display_error_projection()
             cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
-            return None
+            return None, None
 
         image, boxes, python_code, code_output, error_box = process_images(valid_images)
         if code_output is None or python_code is None:
@@ -119,7 +119,7 @@ def run_code_from_frame(preview, fsm):
             ).display_full_projection()
             cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
-            return None
+            return None, None
 
         # Display full projection
         projector = Projector(
@@ -132,10 +132,10 @@ def run_code_from_frame(preview, fsm):
             marker_size=settings["CORNER_MARKER_SIZE"],
             debug_mode=settings["PROJECT_IMAGE"],
         )
-        projection = projector.display_full_projection()
+        projection, code_box = projector.display_full_projection()
         cv2.imshow("Output", projection)
         fsm.transition(Event.FINISH_RUN)
-        return python_code
+        return python_code, code_box
 
     except Exception as e:
         error_projection = Projector(
@@ -213,6 +213,7 @@ def main():
     cv2.setWindowProperty("Output", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     python_code = None
+    code_box = None
 
     try:
         while fsm.state != SystemState.EXITING:
@@ -236,10 +237,10 @@ def main():
                     marker_size=settings["CORNER_MARKER_SIZE"],
                     debug_mode=False,
                 )
-                minimal_projection = projector.display_minimal_projection()
+                minimal_projection = projector.display_idle_projection(code_box)
                 cv2.imshow("Output", minimal_projection)
             elif fsm.state == SystemState.RUNNING:
-                python_code = run_code_from_frame(preview, fsm)
+                python_code, code_box = run_code_from_frame(preview, fsm)
 
             # Handle key inputs
             key = cv2.waitKey(1) & 0xFF
