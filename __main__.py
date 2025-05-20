@@ -135,7 +135,7 @@ def run_code_from_frame(preview, fsm):
         projection = projector.display_full_projection()
         cv2.imshow("Output", projection)
         fsm.transition(Event.FINISH_RUN)
-        return projection
+        return python_code
 
     except Exception as e:
         error_projection = Projector(
@@ -158,6 +158,23 @@ def show_settings_menu(camera_preview=None, voice_thread=None):
     app = SettingsMenu(root, camera_preview, voice_thread)
     root.mainloop()
     load_settings()
+
+def save_code_to_file(python_code):
+    if python_code is None:
+        print("No code to save.")
+        return
+
+    if os.path.exists(settings["CODE_SAVE_PATH"]):
+        with open(settings["CODE_SAVE_PATH"], "r") as file:
+            existing_code = file.read()
+        if existing_code == python_code:
+            print("Code is already saved.")
+            return
+    else: 
+        os.makedirs(os.path.dirname(settings["CODE_SAVE_PATH"]), exist_ok=True)
+    with open(settings["CODE_SAVE_PATH"], "w") as file:
+        file.write(python_code)
+    print(f"Code saved to {settings["CODE_SAVE_PATH"]}")
 
 
 def main():
@@ -195,6 +212,8 @@ def main():
     cv2.namedWindow("Output", cv2.WINDOW_NORMAL)
     cv2.setWindowProperty("Output", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
+    python_code = None
+
     try:
         while fsm.state != SystemState.EXITING:
             frame = preview.get_frame()
@@ -220,7 +239,7 @@ def main():
                 minimal_projection = projector.display_minimal_projection()
                 cv2.imshow("Output", minimal_projection)
             elif fsm.state == SystemState.RUNNING:
-                run_code_from_frame(preview, fsm)
+                python_code = run_code_from_frame(preview, fsm)
 
             # Handle key inputs
             key = cv2.waitKey(1) & 0xFF
@@ -230,6 +249,8 @@ def main():
                 fsm.transition(Event.START_RUN)
             elif key == ord("s"):
                 show_settings_menu(preview, voice_thread)
+            elif key == ord("v"):
+                save_code_to_file(python_code)
             elif key == 27:  # ESC key
                 fsm.transition(Event.EXIT)
 

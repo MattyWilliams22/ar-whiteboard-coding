@@ -15,7 +15,8 @@ default_settings = {
     "PROJECTION_RESOLUTION": [1280, 790],
     "PROJECT_CORNERS": True,
     "CORNER_MARKER_SIZE": 35,
-    "HELPER_CODE": "# Write helper functions here\n# Whiteboard code will be inserted at #INSERT\n#INSERT"
+    "HELPER_CODE": "# Write helper functions here\n# Whiteboard code will be inserted at #INSERT\n#INSERT",
+    "CODE_SAVE_PATH": "code.py",
 }
 
 settings = default_settings.copy()

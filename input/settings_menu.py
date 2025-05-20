@@ -50,19 +50,6 @@ class SettingsMenu:
         self.camera_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
-        # Microphone dropdown
-        ttk.Label(main_frame, text="Microphone:").grid(row=row, column=0, sticky="w", pady=2)
-        self.microphones = self.get_microphones()
-        self.mic_dropdown = ttk.Combobox(main_frame, 
-                                        values=[f"{i}: {name}" for i, name in self.microphones], 
-                                        width=50)
-        if settings["MICROPHONE"] < len(self.microphones):
-            self.mic_dropdown.current(settings["MICROPHONE"])
-        else:
-            self.mic_dropdown.current(0)
-        self.mic_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
-        row += 1
-
         # Camera resolution
         ttk.Label(main_frame, text="Camera Resolution:").grid(row=row, column=0, sticky="w", pady=2)
         self.cam_res_frame = ttk.Frame(main_frame)
@@ -91,6 +78,24 @@ class SettingsMenu:
         self.cam_fps.grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
+        # Voice commands checkbox
+        self.voice_commands_var = tk.BooleanVar(value=settings["VOICE_COMMANDS"])
+        ttk.Checkbutton(main_frame, text="Enable Voice Commands", variable=self.voice_commands_var).grid(row=row, column=0, sticky="w", pady=2)
+        row += 1
+
+        # Microphone dropdown
+        ttk.Label(main_frame, text="Microphone:").grid(row=row, column=0, sticky="w", pady=2)
+        self.microphones = self.get_microphones()
+        self.mic_dropdown = ttk.Combobox(main_frame, 
+                                        values=[f"{i}: {name}" for i, name in self.microphones], 
+                                        width=50)
+        if settings["MICROPHONE"] < len(self.microphones):
+            self.mic_dropdown.current(settings["MICROPHONE"])
+        else:
+            self.mic_dropdown.current(0)
+        self.mic_dropdown.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
+        row += 1
+
         # Projection resolution
         ttk.Label(main_frame, text="Projection Resolution:").grid(row=row, column=0, sticky="w", pady=2)
         self.proj_res_frame = ttk.Frame(main_frame)
@@ -105,17 +110,14 @@ class SettingsMenu:
         self.proj_res_height.pack(side="left")
         row += 1
 
-        # Checkboxes
+        # Project image checkbox
         self.project_image_var = tk.BooleanVar(value=settings["PROJECT_IMAGE"])
         ttk.Checkbutton(main_frame, text="Project Image", variable=self.project_image_var).grid(row=row, column=0, sticky="w", pady=2)
         row += 1
 
+        # Project corners checkbox
         self.project_corners_var = tk.BooleanVar(value=settings["PROJECT_CORNERS"])
         ttk.Checkbutton(main_frame, text="Project Corner Markers", variable=self.project_corners_var).grid(row=row, column=0, sticky="w", pady=2)
-        row += 1
-
-        self.voice_commands_var = tk.BooleanVar(value=settings["VOICE_COMMANDS"])
-        ttk.Checkbutton(main_frame, text="Enable Voice Commands", variable=self.voice_commands_var).grid(row=row, column=0, sticky="w", pady=2)
         row += 1
 
         # Corner marker size
@@ -125,7 +127,7 @@ class SettingsMenu:
         self.corner_marker_size.grid(row=row, column=1, sticky="w", pady=2)
         row += 1
 
-        # Slider
+        # Detection Confidence Slider
         ttk.Label(main_frame, text="Detection Confidence:").grid(row=row, column=0, sticky="w", pady=2)
         self.num_valid_images = tk.Scale(
             main_frame,
@@ -139,6 +141,13 @@ class SettingsMenu:
         )
         self.num_valid_images.set(settings["NUM_VALID_IMAGES"])
         self.num_valid_images.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
+        row += 1
+
+        # Code Save Path
+        ttk.Label(main_frame, text="Code Save Path:").grid(row=row, column=0, sticky="w", pady=2)
+        self.code_save_path = ttk.Entry(main_frame, width=50)
+        self.code_save_path.insert(0, settings["CODE_SAVE_PATH"])
+        self.code_save_path.grid(row=row, column=1, columnspan=4, sticky="ew", pady=2)
         row += 1
 
     def create_helper_code_tab(self):
@@ -311,7 +320,8 @@ class SettingsMenu:
                 "CORNER_MARKER_SIZE": int(self.corner_marker_size.get()),
                 "VOICE_COMMANDS": self.voice_commands_var.get(),
                 "NUM_VALID_IMAGES": self.num_valid_images.get(),
-                "HELPER_CODE": self.helper_text.get("1.0", "end-1c")
+                "HELPER_CODE": self.helper_text.get("1.0", "end-1c"),
+                "CODE_SAVE_PATH": self.code_save_path.get()
             })
 
             save_settings()
