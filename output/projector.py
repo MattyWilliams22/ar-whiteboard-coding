@@ -351,23 +351,43 @@ class Projector:
                 # Find the overlapping region and adjust the boxes
                 py_min_x, py_min_y, py_max_x, py_max_y = get_bbox_extents(py_box)
                 out_min_x, out_min_y, out_max_x, out_max_y = get_bbox_extents(out_box)
-                
+
                 x_diff = out_min_x - py_max_x
                 y_diff = out_min_y - py_max_y
                 if abs(x_diff) > abs(y_diff):
                     # Split vertically
-                    split_x = (out_min_x + py_max_x) / 2
-                    py_box[1][0] = split_x
-                    py_box[2][0] = split_x
-                    out_box[0][0] = split_x
-                    out_box[3][0] = split_x
+                    min_x = min(py_min_x, out_min_x)
+                    max_x = max(py_max_x, out_max_x)
+                    split_x = (min_x + max_x) / 2
+                    if py_min_x < out_min_x:
+                        # Python box is to the left
+                        py_box[1][0] = split_x
+                        py_box[2][0] = split_x
+                        out_box[0][0] = split_x
+                        out_box[3][0] = split_x
+                    else:
+                        # Output box is to the left
+                        out_box[1][0] = split_x
+                        out_box[2][0] = split_x
+                        py_box[0][0] = split_x
+                        py_box[3][0] = split_x
                 else:
                     # Split horizontally
-                    split_y = (out_min_y + py_max_y) / 2
-                    py_box[2][1] = split_y
-                    py_box[3][1] = split_y
-                    out_box[0][1] = split_y
-                    out_box[1][1] = split_y
+                    min_y = min(py_min_y, out_min_y)
+                    max_y = max(py_max_y, out_max_y)
+                    split_y = (min_y + max_y) / 2
+                    if py_min_y < out_min_y:
+                        # Python box is above
+                        py_box[2][1] = split_y
+                        py_box[3][1] = split_y
+                        out_box[0][1] = split_y
+                        out_box[1][1] = split_y
+                    else:
+                        # Output box is above
+                        out_box[2][1] = split_y
+                        out_box[3][1] = split_y
+                        py_box[0][1] = split_y
+                        py_box[1][1] = split_y
 
         # Convert to numpy arrays if they exist
         if py_box is not None:

@@ -223,7 +223,7 @@ def parse_if_statement(tokens: deque, if_bounds):
 def parse_custom_statement(tokens: deque, token, statement_bounds):
     try:
         next, next_bounds = tokens.popleft()
-        while next != "LineBreak" and next != "CALL" and len(tokens) > 0:
+        while next != "LineBreak" and next != "CALL" and next != "CLASS" and len(tokens) > 0:
             token += " " + next
             statement_bounds = get_overall_bounds([statement_bounds, next_bounds])
             next, next_bounds = tokens.popleft()
@@ -253,8 +253,6 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
                     next, next_bounds = tokens.popleft()
             if next != "LineBreak":
                 raise Exception(f"Expected New Line after class assignment, found '{next}'")
-            if err:
-                raise Exception(err)
             statement_bounds = get_overall_bounds([statement_bounds, class_bounds])
             stmt = AssignClass(statement_bounds, token.strip(), class_name, class_args.strip())
             print("Parsed assign class statement ", stmt.python_print())
