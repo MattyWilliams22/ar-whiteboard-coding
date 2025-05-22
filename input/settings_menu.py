@@ -89,60 +89,54 @@ class SettingsMenu:
         return cache_age > 3600  # Verify if cache is older than 1 hour
 
     def detect_cameras(self):
-        """Detect available cameras with max resolution (using your original code)"""
-        index = 0
-        cameras = []
-        consecutive_failures = 0
-        max_consecutive_failures = 2
-        
-        while consecutive_failures < max_consecutive_failures:
-            cap = cv2.VideoCapture(index)
-            if cap.isOpened():
-                consecutive_failures = 0
-                max_res = self._get_max_camera_resolution(cap)
-                cap.release()
-                
-                if max_res:
-                    width, height = max_res
-                    name = self._generate_camera_name(index, width, height)
-                    cameras.append((index, name, width, height))
-            else:
-                consecutive_failures += 1
-                
-            index += 1
-        
-        if not cameras:
-            cameras = [(0, "Default Camera", 640, 480)]
-        
-        # Save to cache
-        self.save_camera_cache(cameras)
-        
-        # Update UI if different from cache
-        if cameras != self.cameras:
+        """Detect available cameras and queue the result"""
+        try:
+            index = 0
+            cameras = []
+            consecutive_failures = 0
+            max_consecutive_failures = 2
+            
+            while consecutive_failures < max_consecutive_failures:
+                cap = cv2.VideoCapture(index)
+                if cap.isOpened():
+                    consecutive_failures = 0
+                    max_res = self._get_max_camera_resolution(cap)
+                    cap.release()
+                    
+                    if max_res:
+                        width, height = max_res
+                        name = self._generate_camera_name(index, width, height)
+                        cameras.append((index, name, width, height))
+                else:
+                    consecutive_failures += 1
+                index += 1
+            
+            if not cameras:
+                cameras = [(0, "Default Camera", 640, 480)]
+            
+            self.save_camera_cache(cameras)
+            
+            # Queue update for main thread UI update
             self.device_queue.put(("camera", cameras))
+        except Exception as e:
+            print(f"Camera detection error: {e}")
+
 
     def process_device_queue(self):
-        """Process results from device detection threads"""
+        """Process results from device detection threads (on main thread)"""
         try:
             while True:
                 device_type, data = self.device_queue.get_nowait()
                 if device_type == "camera":
                     self.cameras = data
-                    self.update_camera_dropdown()
+                    self.update_camera_dropdown()  # Tkinter UI code
                 elif device_type == "microphone":
                     self.microphones = data
-                    self.update_microphone_dropdown()
+                    self.update_microphone_dropdown()  # Tkinter UI code
         except queue.Empty:
             pass
-        self.master.after(100, self.process_device_queue)
+        self.master.after(100, self.process_device_queue)  # Re-check every 100ms
 
-    def start_device_detection(self):
-        """Start camera and microphone detection in background threads"""
-        # Camera detection
-        threading.Thread(target=self.detect_cameras, daemon=True).start()
-        
-        # Microphone detection
-        threading.Thread(target=self.detect_microphones, daemon=True).start()
 
     def _get_max_camera_resolution(self, cap):
         test_resolutions = [
@@ -496,18 +490,35 @@ class SettingsMenu:
                     self.cam_res_height.delete(0, tk.END)
                     self.cam_res_height.insert(0, str(req_height))
 
+            try:
+                camera_index = int(self.camera_dropdown.get().split(":")[0])
+                microphone_index = int(self.mic_dropdown.get().split(":")[0])
+            except (ValueError, IndexError):
+                messagebox.showerror("Error", "Invalid camera or microphone selection.")
+                return
+            
+            try:
+                cam_fps = int(self.cam_fps.get())
+                proj_width = int(self.proj_res_width.get())
+                proj_height = int(self.proj_res_height.get())
+                corner_size = int(self.corner_marker_size.get())
+                num_images = int(self.num_valid_images.get())
+            except ValueError:
+                messagebox.showerror("Error", "Please enter valid numbers in all numeric fields.")
+                return
+            
             # Save device settings
             settings.update({
-                "CAMERA": int(self.camera_dropdown.get().split(":")[0]),
-                "MICROPHONE": int(self.mic_dropdown.get().split(":")[0]),
+                "CAMERA": int(camera_index),
+                "MICROPHONE": int(microphone_index),
                 "CAMERA_RESOLUTION": [req_width, req_height],
-                "CAMERA_FPS": int(self.cam_fps.get()),
-                "PROJECTION_RESOLUTION": [int(self.proj_res_width.get()), int(self.proj_res_height.get())],
+                "CAMERA_FPS": cam_fps,
+                "PROJECTION_RESOLUTION": [proj_width, proj_height],
                 "PROJECT_IMAGE": self.project_image_var.get(),
                 "PROJECT_CORNERS": self.project_corners_var.get(),
-                "CORNER_MARKER_SIZE": int(self.corner_marker_size.get()),
+                "CORNER_MARKER_SIZE": corner_size,
                 "VOICE_COMMANDS": self.voice_commands_var.get(),
-                "NUM_VALID_IMAGES": self.num_valid_images.get(),
+                "NUM_VALID_IMAGES": num_images,
                 "HELPER_CODE": self.helper_text.get("1.0", "end-1c"),
                 "CODE_SAVE_PATH": self.code_save_path.get()
             })
@@ -527,11 +538,9 @@ class SettingsMenu:
                         self.voice_thread.set_active()
                     else:
                         self.voice_thread.set_inactive()
-                    self.voice_thread.update_settings()
-                else:
-                    self.voice_thread.update_settings()
+                self.voice_thread.update_settings()
 
-            self.master.destroy()
+            self.master.after(0, self.master.destroy)
 
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numbers for resolution")
