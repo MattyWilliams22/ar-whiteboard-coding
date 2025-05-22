@@ -16,11 +16,11 @@ class Executor:
         self.error_message = None
 
     def _detect_inserts(self):
-        """Detects occurences of # INSERT X in the helper code"""
+        """Detects occurrences of # INSERT X in the helper code"""
         insert_set = set()
         for line in self.helper_code.splitlines():
-            if line.strip().startswith("# INSERT"):
-                # Check if the line contains a valid insert
+            line = line.replace("#INSERT", "# INSERT").strip()
+            if line.startswith("# INSERT"):
                 parts = line.split()
                 if len(parts) == 3:
                     insert_set.add(parts[2].strip())
@@ -28,24 +28,17 @@ class Executor:
                     insert_set.add("")
         return insert_set
 
+
     def _split_whiteboard_code(self):
         """Split the whiteboard code based on the # INSERT comments"""
         segments = {}
         current_key = ""
         current_segment = []
         for line in self.whiteboard_code.splitlines():
-            if line.strip().startswith("# INSERT") or line.strip().startswith(
-                "#INSERT"
-            ):
-                if line.strip().startswith("# INSERT"):
-                    rest_of_line = line.split("# INSERT", 1)[1].strip()
-                else:
-                    rest_of_line = line.split("#INSERT", 1)[1].strip()
-
-                if rest_of_line:
-                    next_key = rest_of_line.strip()
-                else:
-                    next_key = ""
+            clean_line = line.replace("#INSERT", "# INSERT").strip()
+            if clean_line.startswith("# INSERT"):
+                rest_of_line = clean_line[len("# INSERT"):].strip()
+                next_key = rest_of_line if rest_of_line else ""
 
                 if current_segment:
                     segments[current_key] = "\n".join(current_segment)
@@ -58,24 +51,30 @@ class Executor:
             segments[current_key] = "\n".join(current_segment)
 
         return segments
-    
+
+
     def _replace_with_indentation(self, insert_str, helper_code, whiteboard_code):
-        # Find indentation of insert_str
-        insert_pos = helper_code.find(insert_str)
-        line_start = helper_code.rfind("\n", 0, insert_pos) + 1
-        indent = helper_code[line_start:insert_pos]
+        """Replace a line matching insert_str with properly-indented whiteboard code"""
+        lines = helper_code.splitlines(keepends=True)
+        new_lines = []
+        inserted = False
 
-        # Indent each line of whiteboard code
-        indented_code = ""
-        for line in whiteboard_code.splitlines(keepends=True):
-            if line.strip():
-                indented_code += indent + line
+        for line in lines:
+            stripped_line = line.replace("#INSERT", "# INSERT").strip()
+            if not inserted and stripped_line == insert_str.strip():
+                indent = line[:len(line) - len(line.lstrip())]
+                for w_line in whiteboard_code.splitlines():
+                    if w_line.strip():
+                        new_lines.append(indent + w_line + "\n")
+                    else:
+                        new_lines.append("\n")
+                inserted = True
             else:
-                indented_code += line
+                new_lines.append(line)
 
-        return helper_code.replace(insert_str, indented_code)
+        return "".join(new_lines)
 
-    
+
     def _insert_whiteboard_code(self):
         """Inserts the whiteboard code into the helper code at the # INSERT positions"""
         segments = self._split_whiteboard_code()
@@ -83,20 +82,12 @@ class Executor:
         current_code = self.helper_code
 
         for key in insert_set:
-            if key == "INSERT":
-                key = ""
+            insert_marker = "# INSERT" if key == "" else f"# INSERT {key}"
             if key in segments:
                 segment = segments[key]
-                if key == "":
-                    # Replace the first occurrence of # INSERT
-                    current_code = self._replace_with_indentation(
-                        "# INSERT\n", current_code, segment + "\n"
-                    )
-                else:
-                    # Replace the specific # INSERT X
-                    current_code = self._replace_with_indentation(
-                        f"# INSERT {key}\n", current_code, segment + "\n"
-                    )
+                current_code = self._replace_with_indentation(
+                    insert_marker, current_code, segment + "\n"
+                )
 
         return current_code
 

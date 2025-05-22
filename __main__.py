@@ -2,6 +2,7 @@ import cv2
 import os
 import time
 import tkinter as tk
+import numpy as np
 from threading import Lock
 from input.camera_preview import CameraPreviewThread
 from input.voice_commands import VoiceCommandThread
@@ -65,8 +66,6 @@ def process_images(warped_images):
     code_output, error_message, python_code = executor.execute_in_sandbox()
     if error_message is not None:
         return warped_image, boxes, python_code, error_message, None
-    if code_output is None:
-        return warped_image, boxes, python_code, "Error: Code execution failed", None
 
     return warped_image, boxes, python_code, code_output, error_box
 
@@ -107,7 +106,7 @@ def run_code_from_frame(preview, fsm):
 
         image, boxes, python_code, code_output, error_box = process_images(valid_images)
         if code_output is None or python_code is None:
-            error_projection = Projector(
+            error_projection, code_box = Projector(
                 image,
                 python_code,
                 code_output,
@@ -119,7 +118,8 @@ def run_code_from_frame(preview, fsm):
             ).display_full_projection()
             cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
-            return None, None
+            return None, code_box
+        
 
         # Display full projection
         projector = Projector(
@@ -175,7 +175,6 @@ def save_code_to_file(python_code):
     with open(settings["CODE_SAVE_PATH"], "w") as file:
         file.write(python_code)
     print(f"Code saved to {settings["CODE_SAVE_PATH"]}")
-
 
 def main():
     fsm = SystemFSM()
