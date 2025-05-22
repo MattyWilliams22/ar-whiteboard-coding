@@ -529,6 +529,38 @@ def parse_class(tokens: deque, class_bounds):
         return class_node, tokens, class_bounds, None
     except Exception as e:
         return None, tokens, class_bounds, str(e)
+    
+def parse_comment(tokens: deque, comment_bounds):
+    try:
+        comment = ""
+        next, next_bounds = tokens.popleft()
+        comment_bounds = get_overall_bounds([comment_bounds, next_bounds])
+        while next != "LineBreak":
+            comment += next + " "
+            comment_bounds = get_overall_bounds([comment_bounds, next_bounds])
+            next, next_bounds = tokens.popleft()
+
+        stmt = Comment(comment_bounds, comment.strip())
+        print("Parsed comment ", stmt.python_print())
+        return stmt, tokens, comment_bounds, None
+    except Exception as e:
+        return None, tokens, comment_bounds, str(e)
+    
+def parse_insert(tokens: deque, insert_bounds):
+    try:
+        insert = ""
+        next, next_bounds = tokens.popleft()
+        insert_bounds = get_overall_bounds([insert_bounds, next_bounds])
+        while next != "LineBreak":
+            insert += next + " "
+            insert_bounds = get_overall_bounds([insert_bounds, next_bounds])
+            next, next_bounds = tokens.popleft()
+
+        stmt = Insert(insert_bounds, insert.strip())
+        print("Parsed insert statement ", stmt.python_print())
+        return stmt, tokens, insert_bounds, None
+    except Exception as e:
+        return None, tokens, insert_bounds, str(e)
 
     
 def parse_suite(tokens: deque, end_conditions):
@@ -560,6 +592,10 @@ def parse_suite(tokens: deque, end_conditions):
                 stmt, tokens, stmt_bounds, err = parse_try_statement(tokens, token_bounds)
             elif token == "CLASS":
                 stmt, tokens, stmt_bounds, err = parse_class(tokens, token_bounds)
+            elif token == "COMMENT":
+                stmt, tokens, stmt_bounds, err = parse_comment(tokens, token_bounds)
+            elif token == "INSERT":
+                stmt, tokens, stmt_bounds, err = parse_insert(tokens, token_bounds)
             else:
                 stmt, tokens, stmt_bounds, err = parse_custom_statement(
                     tokens, token, token_bounds

@@ -35,9 +35,8 @@ class Executor:
         current_key = ""
         current_segment = []
         for line in self.whiteboard_code.splitlines():
-            clean_line = line.replace("#INSERT", "# INSERT").strip()
-            if clean_line.startswith("# INSERT"):
-                rest_of_line = clean_line[len("# INSERT"):].strip()
+            if line.startswith("# INSERT"):
+                rest_of_line = line[len("# INSERT"):].strip()
                 next_key = rest_of_line if rest_of_line else ""
 
                 if current_segment:
@@ -60,7 +59,7 @@ class Executor:
         inserted = False
 
         for line in lines:
-            stripped_line = line.replace("#INSERT", "# INSERT").strip()
+            stripped_line = line.strip()
             if not inserted and stripped_line == insert_str.strip():
                 indent = line[:len(line) - len(line.lstrip())]
                 for w_line in whiteboard_code.splitlines():

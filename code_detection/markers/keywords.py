@@ -25,7 +25,9 @@ ALL_KEYWORDS = {
     "TRY",
     "CATCH",
     "FINALLY",
-    "CLASS"
+    "CLASS",
+    "COMMENT",
+    "INSERT",
 }
 
 ALL_CORNER_MARKERS = {
@@ -84,6 +86,10 @@ def get_keyword(index):
             return "FINALLY"
         case 22:
             return "CLASS"
+        case 23:
+            return "COMMENT"
+        case 24:
+            return "INSERT"
         case 44:
             return "PYTHON"
         case 45:
