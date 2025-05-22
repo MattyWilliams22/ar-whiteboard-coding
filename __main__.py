@@ -150,7 +150,7 @@ def run_code_from_frame(preview, fsm):
             ).display_error_projection()
         cv2.imshow("Output", error_projection)
         fsm.transition(Event.ERROR_OCCURRED)
-        return None
+        return None, None
 
 
 def show_settings_menu(camera_preview=None, voice_thread=None):
