@@ -51,6 +51,10 @@ def parse_statement(tokens: deque):
             return parse_import(tokens, next_bounds, "FROM")
         elif next == "TRY":
             return parse_try_statement(tokens, next_bounds)
+        elif next == "COMMENT":
+            return parse_comment(tokens, next_bounds)
+        elif next == "INSERT":
+            return parse_insert(tokens, next_bounds)
         else:
             return parse_custom_statement(tokens, next, next_bounds)
     except Exception as e:

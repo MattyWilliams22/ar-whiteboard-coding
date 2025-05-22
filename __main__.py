@@ -164,17 +164,23 @@ def save_code_to_file(python_code):
         print("No code to save.")
         return
 
-    if os.path.exists(settings["CODE_SAVE_PATH"]):
-        with open(settings["CODE_SAVE_PATH"], "r") as file:
+    # Get the absolute path relative to this module's location
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_dir, settings["CODE_SAVE_PATH"])
+
+    if os.path.exists(full_path):
+        with open(full_path, "r") as file:
             existing_code = file.read()
         if existing_code == python_code:
             print("Code is already saved.")
             return
-    else: 
-        os.makedirs(os.path.dirname(settings["CODE_SAVE_PATH"]), exist_ok=True)
-    with open(settings["CODE_SAVE_PATH"], "w") as file:
+    else:
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+    with open(full_path, "w") as file:
         file.write(python_code)
-    print(f"Code saved to {settings["CODE_SAVE_PATH"]}")
+
+    print(f"Code saved to {full_path}")
 
 def main():
     fsm = SystemFSM()
