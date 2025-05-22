@@ -359,7 +359,7 @@ class SettingsMenu:
         # Instructions
         instructions = ttk.Label(
             self.helper_frame,
-            text="Write helper functions/tests here. Use #INSERT to specify where whiteboard code should be placed.",
+            text="Write helper functions/tests here. Use '# INSERT X' to specify where whiteboard code should be inserted.",
             wraplength=550,
             padding=10
         )
