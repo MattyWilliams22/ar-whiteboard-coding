@@ -16,9 +16,9 @@ from code_detection.markers.keywords import get_keyword, CODE_MAX
 
 
 def combine_markers_and_text(handwritten_text, bboxs, ids):
-    text_map = []
+    boxes = []
 
-    # Draw bounding boxes and text on the image
+    # Add text detected by OCR to the boxes
     for line in handwritten_text[0]:
         box, prediction = line  # Unpack the bounding box and text
         text, _ = prediction
@@ -30,8 +30,9 @@ def combine_markers_and_text(handwritten_text, bboxs, ids):
             [[startX, startY], [endX, startY], [endX, endY], [startX, endY]]
         )
 
-        text_map.append((corners, text))
+        boxes.append((corners, text))
 
+    # Add markers detected by ArUco to the boxes
     for i in range(len(bboxs)):
         box = bboxs[i][0]
 
@@ -46,9 +47,10 @@ def combine_markers_and_text(handwritten_text, bboxs, ids):
 
         text = get_keyword(ids[i][0])
 
-        text_map.append((corners, text))
+        boxes.append((corners, text))
 
-    return text_map
+    # Return the combined list of boxes
+    return boxes
 
 
 def detect_markers(marker_type: str, image):

@@ -66,7 +66,8 @@ class Parser:
             " ": " ",
             " ": " ",
             " ": " ",
-            "​": "",  # Zero-width spaces
+            "​": "",  
+            # Zero-width spaces
             "ᅳ": "_",
             "‐": "-",
             "‑": "-",

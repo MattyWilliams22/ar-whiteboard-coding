@@ -569,6 +569,7 @@ class SettingsMenu:
 
             save_settings()
 
+            # Trigger camera preview window to update camera settings
             if hasattr(self, "camera_preview") and self.camera_preview is not None:
                 self.camera_preview.update_settings(
                     source=settings["CAMERA"],
@@ -576,6 +577,7 @@ class SettingsMenu:
                     fps=settings["CAMERA_FPS"],
                 )
 
+            # Trigger voice command thread to update microphone settings
             if hasattr(self, "voice_thread") and self.voice_thread is not None:
                 if new_voice_enabled != was_voice_enabled:
                     if new_voice_enabled:

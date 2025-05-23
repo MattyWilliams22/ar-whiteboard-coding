@@ -88,7 +88,9 @@ class Executor:
         return current_code
 
     def execute_locally(self):
-        full_code = self._combine_code()
+        """Executes the code locally without sandboxing"""
+        # Combine the helper code and whiteboard code
+        full_code = self._insert_whiteboard_code()
         self.output = None
         self.error_message = None
 
@@ -111,6 +113,8 @@ class Executor:
         return self.output, None
 
     def execute_in_sandbox(self):
+        """Executes the code in a Docker sandbox"""
+        # Combine the helper code and whiteboard code
         full_code = self._insert_whiteboard_code()
         self.output = None
         self.error_message = None

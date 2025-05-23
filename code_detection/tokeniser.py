@@ -17,6 +17,7 @@ class Tokeniser:
             coordinates = item[0]  # Bounding box (numpy array of shape (4,2))
             text = item[1]  # Extract the text directly (string)
 
+            # Filter out unwanted labels
             if text in [
                 "PYTHON",
                 "RESULTS",
@@ -43,7 +44,6 @@ class Tokeniser:
 
             # Find the most appropriate line for the current box
             best_line = None
-            best_index = -1
             for i, line in enumerate(lines):
                 line_center_y = np.mean(
                     [
@@ -56,7 +56,6 @@ class Tokeniser:
                 )
                 if abs(center_y - line_center_y) <= line_threshold:
                     best_line = line
-                    best_index = i
                     break
 
             if best_line is not None:
@@ -121,6 +120,8 @@ class Tokeniser:
         self.tokens = tokens
 
     def tokens_to_string(self):
+        # Convert the tokens to a string representation
+
         if self.tokens is None:
             return ""
 

@@ -1,6 +1,7 @@
 # Index of largest code marker ID
-CODE_MAX = 16
+CODE_MAX = 24
 
+# List of all code keywords
 ALL_KEYWORDS = {
     "FUNCTION",
     "IF",
@@ -30,6 +31,7 @@ ALL_KEYWORDS = {
     "INSERT",
 }
 
+# List of the 4 corner markers
 ALL_CORNER_MARKERS = {
     "Bottom Left",
     "Bottom Right",
@@ -38,7 +40,7 @@ ALL_CORNER_MARKERS = {
 }
 
 
-# Function to map marker IDs to text
+# Function to map marker IDs to the corresponding label
 def get_keyword(index):
     match index:
         case 0:

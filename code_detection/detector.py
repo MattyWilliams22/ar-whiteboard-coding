@@ -51,9 +51,9 @@ class Detector:
         if not aruco_boxes:
             raise ValueError("No ArUco boxes provided for scaling reference.")
 
-        # Get the text box center (in image coordinates)
-        text_center_x = (box[0][0] + box[2][0]) / 2
-        text_center_y = (box[0][1] + box[2][1]) / 2
+        # Get the text box centre (in image coordinates)
+        text_centre_x = (box[0][0] + box[2][0]) / 2
+        text_centre_y = (box[0][1] + box[2][1]) / 2
 
         # Check if the first ArUco box is transformed (card) or raw (marker)
         aruco_sample = aruco_boxes[0][0]  # Take the first box
@@ -79,11 +79,11 @@ class Detector:
         # Compute card position (accounting for text offset)
         # Text is at (4.8, 0) relative to card's (-1.3, -1.3) to (8.7, 1.3)
         # So, text is 6.1 units from the left edge (4.8 - (-1.3))
-        # Card's left edge = text_center_x - (6.1 / 10.0) * card_width
-        card_left = text_center_x - (6.1 / 10.0) * card_width
+        # Card's left edge = text_centre_x - (6.1 / 10.0) * card_width
+        card_left = text_centre_x - (6.1 / 10.0) * card_width
         card_top = (
-            text_center_y - (1.3 / 2.6) * card_height
-        )  # Text is vertically centered
+            text_centre_y - (1.3 / 2.6) * card_height
+        )  # Text is vertically centred
 
         # Compute card corners
         top_left = (card_left, card_top)
@@ -91,6 +91,7 @@ class Detector:
         bottom_left = (card_left, card_top + card_height)
         bottom_right = (card_left + card_width, card_top + card_height)
 
+        # Create new box with card corners
         new_box = np.array(
             [
                 [top_left[0], top_left[1]],
@@ -104,15 +105,20 @@ class Detector:
         return new_box
 
     def detect_from_image(self, image, image_id):
+        # Detect ArUco markers in the image
         image, aruco_corners, ids = detect_aruco_markers(image, self.aruco_dict_type)
         if image is None:
             return [], []
 
+        # Create a mask for the detected ArUco markers
         mask = create_aruco_mask(image, aruco_corners)
+
+        # Detect text using PaddleOCR
         image, text = detect_paddleocr_text(image, mask)
 
         boxes = []
 
+        # Add detected text boxes to list of boxes
         if text and text[0]:
             for line in text[0]:
                 box, prediction = line
@@ -123,6 +129,8 @@ class Detector:
                     [[startX, startY], [endX, startY], [endX, endY], [startX, endY]]
                 )
 
+                # Check if the detected text is a keyword
+                # and if it is, transform the box to card coordinates
                 if text_val.upper() in ALL_KEYWORDS:
                     corners = self.text_box_to_card(corners, aruco_corners)
                     if text_val.upper() == "ELSEIF":
@@ -131,6 +139,7 @@ class Detector:
                 else:
                     boxes.append((corners, text_val, "ocr", image_id))
 
+        # Add detected ArUco boxes to list of boxes
         if ids is not None:
             for i in range(len(aruco_corners)):
                 marker_corners = aruco_corners[i][0]
@@ -148,6 +157,7 @@ class Detector:
         return boxes
 
     def group_boxes_by_overlap(self, boxes):
+        # Group boxes into clusters that significantly overlap each other
         grouped_boxes = []
         processed_boxes = set()
 
@@ -174,6 +184,9 @@ class Detector:
         return grouped_boxes
 
     def filter_boxes(self, boxes):
+        # Filter boxes based on their type and the number of images
+        # they appear in
+
         if self.images is None or len(self.images) == 0:
             image_count = 1
         else:
@@ -258,7 +271,7 @@ class Detector:
         for label in exact_counts.keys():
             matched = False
             for existing in label_groups:
-                # Normalized similarity (0-1)
+                # Normalised similarity (0-1)
                 similarity = 1 - (
                     lev_dist(label, existing) / max(len(label), len(existing))
                 )
@@ -292,6 +305,7 @@ class Detector:
         return combined_box
 
     def combine_boxes(self, all_detected_boxes):
+        # Combine detected boxes from mutliple images into a single list
         if all_detected_boxes is None or len(all_detected_boxes) == 0:
             return []
 
@@ -320,12 +334,18 @@ class Detector:
             print("Error: No images provided")
             return None, None
 
+        # Detect code in the images
         all_detected_boxes = []
         for i, img in enumerate(self.images):
             boxes = self.detect_from_image(img, i)
             all_detected_boxes.extend(boxes)
 
-        final_boxes = self.combine_boxes(all_detected_boxes)
+        if len(self.images) > 1:
+            # If multiple images, combine boxes from all images
+            final_boxes = self.combine_boxes(all_detected_boxes)
+        else:
+            # If only one image, use the detected boxes directly
+            final_boxes = all_detected_boxes
         return (
             self.images[0],
             final_boxes,

@@ -15,6 +15,9 @@ class Preprocessor:
         self.ids = None
 
     def warp_image(self, image, margin=0.01):
+        """Warp the image to a rectangle defined by the corner markers."""
+
+        # Detect ArUco markers
         gray = (
             image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         )
@@ -31,9 +34,8 @@ class Preprocessor:
         self.corners = corners
         self.ids = ids
 
+        # Get the corner markers
         src_points = self.get_corner_markers()
-        # if src_points is None:
-        #   src_points = self.get_outermost_markers()
         if src_points is None:
             return None, "Error: Could not find corner markers!"
 
@@ -64,6 +66,7 @@ class Preprocessor:
         full_width = width
         full_height = height
 
+        # Apply perspective transformation
         H = cv2.getPerspectiveTransform(src_points, dst_points)
         warped = cv2.warpPerspective(image, H, (full_width, full_height))
         return warped, None

@@ -22,16 +22,16 @@ def closest_color(hsv_pixel):
     :return: Closest color name
     """
     min_distance = float("inf")
-    closest_color_name = None
+    closest_colour_name = None
 
-    for color_name, (lower, upper) in COLOR_RANGES.items():
-        mean_hsv = (lower + upper) / 2  # Get the mid HSV value of the color range
+    for colour_name, (lower, upper) in COLOR_RANGES.items():
+        mean_hsv = (lower + upper) / 2  # Get the mid HSV value of the colour range
         distance = np.linalg.norm(hsv_pixel - mean_hsv)  # Compute Euclidean distance
         if distance < min_distance:
             min_distance = distance
-            closest_color_name = color_name
+            closest_colour_name = colour_name
 
-    return closest_color_name
+    return closest_colour_name
 
 
 def detect_colored_rectangles(image):
@@ -54,7 +54,7 @@ def detect_colored_rectangles(image):
 
             if len(approx) == 4:  # Ensure it's a rectangle (4 corners)
                 detected_rectangles.append(approx)
-                color_ids.append(color_name)  # The color name is the ID
+                color_ids.append(color_name)  # The colour name is the ID
                 cv2.drawContours(image, [approx], -1, (0, 255, 0), 3)  # Draw rectangle
 
     return (
@@ -116,7 +116,7 @@ def draw_rectangle_keywords(image, rectangles, ids):
         box = rect
         color_name = ids[i]
 
-        # Calculate the center of the rectangle
+        # Calculate the centre of the rectangle
         center_x = int((box[0][0][0] + box[2][0][0]) / 2)
         center_y = int((box[0][0][1] + box[2][0][1]) / 2)
 
@@ -125,7 +125,7 @@ def draw_rectangle_keywords(image, rectangles, ids):
         text_x = center_x + offset
         text_y = center_y
 
-        # Draw the corresponding keyword (color name) near the rectangle
+        # Draw the corresponding keyword (colour name) near the rectangle
         cv2.putText(
             image,
             color_name,

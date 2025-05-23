@@ -9,6 +9,7 @@ class SystemFSM:
         self._initialize_transitions()
 
     def _initialize_transitions(self):
+        """Initialize the state transitions for the FSM."""
         self.transitions = {
             SystemState.IDLE: {
                 Event.START_RUN: SystemState.RUNNING,
@@ -35,6 +36,7 @@ class SystemFSM:
         }
 
     def transition(self, event):
+        """Transition to the next state based on the current state and event."""
         with self.lock:
             print(f"Current state: {self.state}, Event: {event}")
             if event in self.transitions[self.state]:

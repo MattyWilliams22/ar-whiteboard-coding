@@ -43,14 +43,14 @@ class VoiceCommandThread(threading.Thread):
             "close": Event.EXIT,
         }
 
-        # Initialize Porcupine (after all params are set)
+        # Initialise Porcupine (after all params are set)
         self.porcupine = None
         self.audio_stream = None
         self.pa = None
-        self._initialize_porcupine()
+        self._initialise_porcupine()
 
-    def _initialize_porcupine(self):
-        """Initialize or reinitialize audio components with current settings"""
+    def _initialise_porcupine(self):
+        """Initialise or reinitialise audio components with current settings"""
         # Clean up existing resources
         if self.audio_stream is not None:
             self.audio_stream.close()
@@ -83,6 +83,7 @@ class VoiceCommandThread(threading.Thread):
             raise
 
     def _process_command(self, command):
+        """Process the recognised command and return the corresponding event"""
         command = command.lower().strip()
         for key, event in self.command_map.items():
             if key in command:
@@ -94,22 +95,25 @@ class VoiceCommandThread(threading.Thread):
         self._needs_restart.set()
 
     def set_active(self):
+        """Activate the voice command thread"""
         self._running.set()
         print("Voice command thread activated.")
 
     def set_inactive(self):
+        """Deactivate the voice command thread"""
         self._running.clear()
         print("Voice command thread deactivated.")
 
     def run(self):
+        """Main loop for the voice command thread"""
         while not self._stop_flag.is_set():
             if self._running.is_set():
                 if self._needs_restart.is_set():
-                    self._initialize_porcupine()
+                    self._initialise_porcupine()
                     self._needs_restart.clear()
 
                 try:
-                    # Listen for hotword
+                    # Listen for hotword 'Jarvis'
                     pcm = self.audio_stream.read(self.porcupine.frame_length)
                     pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
                     result = self.porcupine.process(pcm)
@@ -148,6 +152,7 @@ class VoiceCommandThread(threading.Thread):
                 time.sleep(1)
 
     def stop(self):
+        """Stop the voice command thread and clean up resources"""
         self._stop_flag.set()
         if self.audio_stream is not None:
             self.audio_stream.close()

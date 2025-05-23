@@ -22,6 +22,7 @@ load_dotenv()
 
 
 def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
+    """Collect valid images from the camera preview window."""
     valid_images = []
     attempts = 0
     while len(valid_images) < num_required and attempts < max_attempts:
@@ -46,6 +47,8 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
 
 
 def process_images(warped_images):
+    """Process the images to detect code, tokenise, parse, and execute."""
+
     detector = Detector(warped_images)
     warped_image, boxes = detector.detect_code()
     if warped_image is None or boxes is None:
@@ -70,7 +73,8 @@ def process_images(warped_images):
     return warped_image, boxes, python_code, code_output, error_box
 
 
-def run_code_from_frame(preview, fsm):
+def detect_and_run_code(preview, fsm):
+    """Detect and run the whiteboard code"""
     try:
         # Display minimal projection
         projector = Projector(
@@ -87,7 +91,7 @@ def run_code_from_frame(preview, fsm):
         cv2.imshow("Output", minimal_projection)
         cv2.waitKey(1)
 
-        # Collect and process images
+        # Collect valid images
         valid_images = collect_valid_images(preview, settings["NUM_VALID_IMAGES"])
         if len(valid_images) < settings["NUM_VALID_IMAGES"]:
             error_projection = Projector(
@@ -104,6 +108,7 @@ def run_code_from_frame(preview, fsm):
             fsm.transition(Event.ERROR_OCCURRED)
             return None, None
 
+        # Detect and execute code
         image, boxes, python_code, code_output, error_box = process_images(valid_images)
         if code_output is None or python_code is None:
             error_projection, code_box = Projector(
@@ -153,6 +158,7 @@ def run_code_from_frame(preview, fsm):
 
 
 def show_settings_menu(camera_preview=None, voice_thread=None):
+    """Display the settings menu."""
     root = tk.Tk()
     app = SettingsMenu(root, camera_preview, voice_thread)
     root.mainloop()
@@ -160,6 +166,8 @@ def show_settings_menu(camera_preview=None, voice_thread=None):
 
 
 def save_code_to_file(python_code):
+    """Save the generated Python code to a file."""
+
     if python_code is None:
         print("No code to save.")
         return
@@ -184,10 +192,11 @@ def save_code_to_file(python_code):
 
 
 def main():
+    """Main function to run the system."""
     fsm = SystemFSM()
     load_settings()
 
-    # Initialize voice thread based on settings
+    # Initialise voice thread based on settings
     voice_thread = None
     try:
         voice_thread = VoiceCommandThread(
@@ -204,8 +213,10 @@ def main():
         print(f"Failed to initialize voice commands: {e}")
         settings["VOICE_COMMANDS"] = False
 
+    # Display the settings menu
     show_settings_menu(voice_thread=voice_thread)
 
+    # Initialise camera preview window
     preview = CameraPreviewThread(
         source=settings["CAMERA"],
         resolution=tuple(settings["CAMERA_RESOLUTION"]),
@@ -221,8 +232,10 @@ def main():
     python_code = None
     code_box = None
 
+    # Start the main loop
     try:
         while fsm.state != SystemState.EXITING:
+            # Display camera feed
             frame = preview.get_frame()
             if frame is not None:
                 cv2.imshow("Camera Feed", frame)
@@ -231,7 +244,7 @@ def main():
                 fsm.transition(Event.EXIT)
                 break
 
-            # Handle state-specific rendering
+            # Handle current state if necessary
             if fsm.state == SystemState.IDLE:
                 projector = Projector(
                     None,
@@ -246,7 +259,7 @@ def main():
                 minimal_projection = projector.display_idle_projection(code_box)
                 cv2.imshow("Output", minimal_projection)
             elif fsm.state == SystemState.RUNNING:
-                python_code, code_box = run_code_from_frame(preview, fsm)
+                python_code, code_box = detect_and_run_code(preview, fsm)
 
             # Handle key inputs
             key = cv2.waitKey(1) & 0xFF
@@ -262,6 +275,7 @@ def main():
                 fsm.transition(Event.EXIT)
 
     finally:
+        # Clean up resources
         preview.stop()
         preview.join()
         if voice_thread:

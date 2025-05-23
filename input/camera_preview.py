@@ -24,6 +24,7 @@ class CameraPreviewThread(threading.Thread):
         self._init_camera()
 
     def _init_camera(self):
+        """Initialize the camera with the current settings."""
         if self.capture is not None:
             self.capture.release()
 
@@ -34,6 +35,7 @@ class CameraPreviewThread(threading.Thread):
         time.sleep(0.5)
 
     def update_settings(self, source, resolution, fps):
+        """Update the camera settings and reinitialize the camera."""
         with self._settings_lock:
             self.source = source
             self.resolution = resolution
@@ -41,6 +43,7 @@ class CameraPreviewThread(threading.Thread):
             self._update_settings_event.set()
 
     def run(self):
+        """Thread run method to capture frames from the camera."""
         while self._running.is_set():
             if self._update_settings_event.is_set():
                 with self._settings_lock:

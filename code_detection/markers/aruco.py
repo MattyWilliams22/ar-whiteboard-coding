@@ -16,7 +16,7 @@ def transform_bounding_boxes(bboxs):
     for bbox in bboxs:
         pixel_coords = np.array(bbox, dtype=np.float32).reshape(
             1, 4, 2
-        )  # Ensure it's the right shape
+        )
 
         # Compute transformation matrix from pixel coordinates to ARUCO_COORDS
         transform_matrix = cv2.getPerspectiveTransform(
@@ -54,12 +54,12 @@ def transform_bounding_boxes_simple(bboxes, ignore=[]):
 
         top_vector = (bbox[1] - bbox[0]) / 2
         bottom_vector = (bbox[2] - bbox[3]) / 2
-        # Calculate the average
+        # Calculate the average horizontal vector
         horizontal_vector = (top_vector + bottom_vector) / 2
 
         left_vector = (bbox[3] - bbox[0]) / 2
         right_vector = (bbox[2] - bbox[1]) / 2
-        # Calculate the average
+        # Calculate the average vertical vector
         vertical_vector = (left_vector + right_vector) / 2
 
         # Find the new corner points of the bounding box
@@ -81,7 +81,6 @@ def transform_bounding_boxes_simple(bboxes, ignore=[]):
             dtype=np.float32,
         )
 
-        # transformed_bboxes.append(new_bbox)
         transformed_bboxes.append(new_bbox)
 
     return transformed_bboxes
@@ -151,7 +150,7 @@ def draw_aruco_keywords(image, bboxs, ids):
     for i in range(len(bboxs)):
         box = bboxs[i][0]
 
-        # Calculate the center of the marker
+        # Calculate the centre of the marker
         center_x = int((box[0][0] + box[2][0]) / 2)
         center_y = int((box[0][1] + box[2][1]) / 2)
 
@@ -159,7 +158,7 @@ def draw_aruco_keywords(image, bboxs, ids):
         dir_x = box[1][0] - box[0][0]
         dir_y = box[1][1] - box[0][1]
 
-        # Normalize the direction vector to get the correct orientation
+        # Normalise the direction vector to get the correct orientation
         magnitude = np.sqrt(dir_x**2 + dir_y**2)
         dir_x /= magnitude
         dir_y /= magnitude
