@@ -1,11 +1,13 @@
 from enum import Enum, auto
 
+
 class SystemState(Enum):
     IDLE = auto()
     RUNNING = auto()
     PROJECTING = auto()
     ERROR = auto()
     EXITING = auto()
+
 
 class Event(Enum):
     START_RUN = auto()

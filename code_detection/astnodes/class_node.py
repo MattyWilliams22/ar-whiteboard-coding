@@ -3,14 +3,21 @@ from code_detection.astnodes.suite import Suite
 from code_detection.astnodes.identifier import Identifier
 from typing import List, Tuple
 
+
 class ClassNode(Node):
 
-    def __init__(self, bounds: List[Tuple[int, int]], name: Identifier, inherits: str, body: Suite):
+    def __init__(
+        self,
+        bounds: List[Tuple[int, int]],
+        name: Identifier,
+        inherits: str,
+        body: Suite,
+    ):
         super().__init__(bounds, "Class")
         self.name = name
         self.inherits = inherits
         self.body = body
-        
+
     def python_print(self):
         indent = "    "
         class_str = f"class {self.name.python_print()}("

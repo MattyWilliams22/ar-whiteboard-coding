@@ -7,6 +7,7 @@ from code_detection.astnodes import *
 from output.output import output
 from output.boxes import display_bounding_boxes
 
+
 def main():
     image = cv2.imread("test_images/normalised_test.jpg")
 
@@ -30,7 +31,13 @@ def main():
     # python_code = test_parsing()
 
     # output("window", image, python_code)
-    display_bounding_boxes(boxes, image_size=(1280, 790), aruco_dict_type=cv2.aruco.DICT_6X6_50, marker_size=35)
+    display_bounding_boxes(
+        boxes,
+        image_size=(1280, 790),
+        aruco_dict_type=cv2.aruco.DICT_6X6_50,
+        marker_size=35,
+    )
+
 
 if __name__ == "__main__":
     main()

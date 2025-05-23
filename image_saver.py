@@ -1,6 +1,7 @@
 import os
 import cv2
 
+
 def capture_images(save_directory):
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
@@ -17,7 +18,7 @@ def capture_images(save_directory):
     try:
         while True:
             distance = input("Enter main distance (or type 'exit' to quit): ")
-            if distance.lower() == 'exit':
+            if distance.lower() == "exit":
                 break
 
             offset = input("Enter offset distance: ")
@@ -36,16 +37,17 @@ def capture_images(save_directory):
                 cv2.imshow("Webcam Preview", frame)
 
                 key = cv2.waitKey(1) & 0xFF
-                if key == ord(' '):  # Spacebar to capture
+                if key == ord(" "):  # Spacebar to capture
                     cv2.imwrite(filepath, frame)
                     print(f"Image saved as {filename}")
                     break
-                elif key == ord('q'):  # 'q' to quit
+                elif key == ord("q"):  # 'q' to quit
                     return
-    
+
     finally:
         cap.release()
         cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     save_directory = input("Enter directory to save images: ")

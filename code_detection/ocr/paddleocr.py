@@ -4,7 +4,8 @@ import numpy as np
 from paddleocr import PaddleOCR
 
 # Initialize PaddleOCR (with angle classification disabled)
-ocr = PaddleOCR(use_angle_cls=False, lang='en')
+ocr = PaddleOCR(use_angle_cls=False, lang="en")
+
 
 # Function to detect handwritten text using a text detection model
 def detect_paddleocr_text(image, aruco_mask):
@@ -28,7 +29,7 @@ def detect_paddleocr_text(image, aruco_mask):
     #     cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
 
     #     # Put recognized text above the rectangle
-    #     cv2.putText(image, f"{text}", (startX, startY - 10), 
+    #     cv2.putText(image, f"{text}", (startX, startY - 10),
     #                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
     return image, results

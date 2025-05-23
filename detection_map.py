@@ -3,23 +3,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
+
 def parse_results(file_path):
     """
     Reads a file and extracts (back, across, percentage detected) from filenames.
     """
     data = []
-    
+
     with open(file_path, "r") as file:
         for line in file:
-            match = re.search(r"back_([\d\.]+)_across_([\d\.]+)\.jpg: (\d+) / 10 markers detected", line)
+            match = re.search(
+                r"back_([\d\.]+)_across_([\d\.]+)\.jpg: (\d+) / 10 markers detected",
+                line,
+            )
             if match:
-                back = float(match.group(1))   # Distance back (y-axis)
+                back = float(match.group(1))  # Distance back (y-axis)
                 across = float(match.group(2))  # Distance across (x-axis)
                 percentage = (int(match.group(3)) / 10) * 100  # Convert to percentage
-                
+
                 data.append((back, across, percentage))
-    
+
     return data
+
 
 def create_mirrored_grid(data):
     """
@@ -29,8 +34,9 @@ def create_mirrored_grid(data):
     for back, across, percentage in data:
         mirrored_data.append((back, across, percentage))
         mirrored_data.append((back, -across, percentage))  # Mirror the across value
-    
+
     return mirrored_data
+
 
 def plot_grid(data, save_path=None):
     """
@@ -41,7 +47,9 @@ def plot_grid(data, save_path=None):
 
     # Extract unique x (across) and y (back) values
     x_values = sorted(set(d[1] for d in mirrored_data))
-    y_values = sorted(set(d[0] for d in mirrored_data), reverse=False)  # Keep 0 at the top
+    y_values = sorted(
+        set(d[0] for d in mirrored_data), reverse=False
+    )  # Keep 0 at the top
 
     # Create a grid initialized with NaN (so missing values are handled separately)
     grid = np.full((len(y_values), len(x_values)), np.nan)
@@ -76,9 +84,12 @@ def plot_grid(data, save_path=None):
     # Show the plot
     plt.show()
 
+
 if __name__ == "__main__":
     file_path = input("Enter the path to the results file: ").strip()
-    save_path = input("Enter the path to save the heatmap image (or press Enter to skip saving): ").strip()
+    save_path = input(
+        "Enter the path to save the heatmap image (or press Enter to skip saving): "
+    ).strip()
 
     data = parse_results(file_path)
     plot_grid(data, save_path if save_path else None)

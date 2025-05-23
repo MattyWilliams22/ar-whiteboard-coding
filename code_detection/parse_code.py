@@ -227,7 +227,12 @@ def parse_if_statement(tokens: deque, if_bounds):
 def parse_custom_statement(tokens: deque, token, statement_bounds):
     try:
         next, next_bounds = tokens.popleft()
-        while next != "LineBreak" and next != "CALL" and next != "CLASS" and len(tokens) > 0:
+        while (
+            next != "LineBreak"
+            and next != "CALL"
+            and next != "CLASS"
+            and len(tokens) > 0
+        ):
             token += " " + next
             statement_bounds = get_overall_bounds([statement_bounds, next_bounds])
             next, next_bounds = tokens.popleft()
@@ -256,9 +261,13 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
                     class_bounds = get_overall_bounds([class_bounds, next_bounds])
                     next, next_bounds = tokens.popleft()
             if next != "LineBreak":
-                raise Exception(f"Expected New Line after class assignment, found '{next}'")
+                raise Exception(
+                    f"Expected New Line after class assignment, found '{next}'"
+                )
             statement_bounds = get_overall_bounds([statement_bounds, class_bounds])
-            stmt = AssignClass(statement_bounds, token.strip(), class_name, class_args.strip())
+            stmt = AssignClass(
+                statement_bounds, token.strip(), class_name, class_args.strip()
+            )
             print("Parsed assign class statement ", stmt.python_print())
             return stmt, tokens, statement_bounds, None
         elif next != "LineBreak":
@@ -489,7 +498,8 @@ def parse_try_statement(tokens: deque, try_bounds):
         return stmt, tokens, try_bounds, None
     except Exception as e:
         return None, tokens, try_bounds, str(e)
-    
+
+
 def parse_class(tokens: deque, class_bounds):
     try:
         name, name_bounds = tokens.popleft()
@@ -533,7 +543,8 @@ def parse_class(tokens: deque, class_bounds):
         return class_node, tokens, class_bounds, None
     except Exception as e:
         return None, tokens, class_bounds, str(e)
-    
+
+
 def parse_comment(tokens: deque, comment_bounds):
     try:
         comment = ""
@@ -549,7 +560,8 @@ def parse_comment(tokens: deque, comment_bounds):
         return stmt, tokens, comment_bounds, None
     except Exception as e:
         return None, tokens, comment_bounds, str(e)
-    
+
+
 def parse_insert(tokens: deque, insert_bounds):
     try:
         insert = ""
@@ -566,7 +578,7 @@ def parse_insert(tokens: deque, insert_bounds):
     except Exception as e:
         return None, tokens, insert_bounds, str(e)
 
-    
+
 def parse_suite(tokens: deque, end_conditions):
     try:
         out_of_tokens = not tokens
@@ -579,7 +591,9 @@ def parse_suite(tokens: deque, end_conditions):
             elif token == "PRINT":
                 stmt, tokens, stmt_bounds, err = parse_print(tokens, token_bounds)
             elif token == "IF":
-                stmt, tokens, stmt_bounds, err = parse_if_statement(tokens, token_bounds)
+                stmt, tokens, stmt_bounds, err = parse_if_statement(
+                    tokens, token_bounds
+                )
             elif token == "RETURN":
                 stmt, tokens, stmt_bounds, err = parse_return(tokens, token_bounds)
             elif token == "FOR":
@@ -589,11 +603,17 @@ def parse_suite(tokens: deque, end_conditions):
             elif token == "CALL":
                 stmt, tokens, stmt_bounds, err = parse_call(tokens, token_bounds)
             elif token == "IMPORT":
-                stmt, tokens, stmt_bounds, err = parse_import(tokens, token_bounds, "IMPORT")
+                stmt, tokens, stmt_bounds, err = parse_import(
+                    tokens, token_bounds, "IMPORT"
+                )
             elif token == "FROM":
-                stmt, tokens, stmt_bounds, err = parse_import(tokens, token_bounds, "FROM")
+                stmt, tokens, stmt_bounds, err = parse_import(
+                    tokens, token_bounds, "FROM"
+                )
             elif token == "TRY":
-                stmt, tokens, stmt_bounds, err = parse_try_statement(tokens, token_bounds)
+                stmt, tokens, stmt_bounds, err = parse_try_statement(
+                    tokens, token_bounds
+                )
             elif token == "CLASS":
                 stmt, tokens, stmt_bounds, err = parse_class(tokens, token_bounds)
             elif token == "COMMENT":
@@ -604,7 +624,7 @@ def parse_suite(tokens: deque, end_conditions):
                 stmt, tokens, stmt_bounds, err = parse_custom_statement(
                     tokens, token, token_bounds
                 )
-            
+
             if err is not None:
                 return None, tokens, suite_bounds, str(err)
             suite_bounds = get_overall_bounds([suite_bounds, stmt_bounds])
@@ -619,7 +639,7 @@ def parse_suite(tokens: deque, end_conditions):
             tokens.appendleft((token, bounds))
         print("Parsed suite ", suite.python_print())
         return suite, tokens, suite_bounds, None
-    
+
     except Exception as e:
         return None, tokens, suite_bounds, str(e)
 

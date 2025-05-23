@@ -28,7 +28,6 @@ class Executor:
                     insert_set.add("")
         return insert_set
 
-
     def _split_whiteboard_code(self):
         """Split the whiteboard code based on the # INSERT comments"""
         segments = {}
@@ -36,7 +35,7 @@ class Executor:
         current_segment = []
         for line in self.whiteboard_code.splitlines():
             if line.startswith("# INSERT"):
-                rest_of_line = line[len("# INSERT"):].strip()
+                rest_of_line = line[len("# INSERT") :].strip()
                 next_key = rest_of_line if rest_of_line else ""
 
                 if current_segment:
@@ -51,7 +50,6 @@ class Executor:
 
         return segments
 
-
     def _replace_with_indentation(self, insert_str, helper_code, whiteboard_code):
         """Replace a line matching insert_str with properly-indented whiteboard code"""
         lines = helper_code.splitlines(keepends=True)
@@ -61,7 +59,7 @@ class Executor:
         for line in lines:
             stripped_line = line.strip()
             if not inserted and stripped_line == insert_str.strip():
-                indent = line[:len(line) - len(line.lstrip())]
+                indent = line[: len(line) - len(line.lstrip())]
                 for w_line in whiteboard_code.splitlines():
                     if w_line.strip():
                         new_lines.append(indent + w_line + "\n")
@@ -72,7 +70,6 @@ class Executor:
                 new_lines.append(line)
 
         return "".join(new_lines)
-
 
     def _insert_whiteboard_code(self):
         """Inserts the whiteboard code into the helper code at the # INSERT positions"""

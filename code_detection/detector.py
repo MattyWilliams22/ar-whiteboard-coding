@@ -30,11 +30,12 @@ def compute_iou(box1, box2):
         return 0
     return inter_area / union_area
 
+
 def compute_intersection_area(box1, box2):
     # Convert to numpy arrays
     poly1 = np.array(box1, dtype=np.float32).reshape(-1, 1, 2)
     poly2 = np.array(box2, dtype=np.float32).reshape(-1, 1, 2)
-    
+
     # Calculate intersection
     intersection, _ = cv2.intersectConvexConvex(poly1, poly2)
     return intersection
@@ -68,15 +69,21 @@ class Detector:
             card_height = aruco_height
         else:
             # If raw ArUco box, scale it to card dimensions (10.0 × 2.6 units)
-            card_width = aruco_width * (10.0 / 2.0) * 0.8  # Card is 10 units wide (8.7 - (-1.3))
-            card_height = aruco_height * (2.6 / 2.0)  # Card is 2.6 units tall (1.3 - (-1.3))
+            card_width = (
+                aruco_width * (10.0 / 2.0) * 0.8
+            )  # Card is 10 units wide (8.7 - (-1.3))
+            card_height = aruco_height * (
+                2.6 / 2.0
+            )  # Card is 2.6 units tall (1.3 - (-1.3))
 
         # Compute card position (accounting for text offset)
         # Text is at (4.8, 0) relative to card's (-1.3, -1.3) to (8.7, 1.3)
         # So, text is 6.1 units from the left edge (4.8 - (-1.3))
         # Card's left edge = text_center_x - (6.1 / 10.0) * card_width
         card_left = text_center_x - (6.1 / 10.0) * card_width
-        card_top = text_center_y - (1.3 / 2.6) * card_height  # Text is vertically centered
+        card_top = (
+            text_center_y - (1.3 / 2.6) * card_height
+        )  # Text is vertically centered
 
         # Compute card corners
         top_left = (card_left, card_top)
@@ -84,12 +91,15 @@ class Detector:
         bottom_left = (card_left, card_top + card_height)
         bottom_right = (card_left + card_width, card_top + card_height)
 
-        new_box = np.array([
-            [top_left[0], top_left[1]],
-            [top_right[0], top_right[1]],
-            [bottom_right[0], bottom_right[1]],
-            [bottom_left[0], bottom_left[1]],
-        ], dtype=np.float32)
+        new_box = np.array(
+            [
+                [top_left[0], top_left[1]],
+                [top_right[0], top_right[1]],
+                [bottom_right[0], bottom_right[1]],
+                [bottom_left[0], bottom_left[1]],
+            ],
+            dtype=np.float32,
+        )
 
         return new_box
 
@@ -136,7 +146,7 @@ class Detector:
                 boxes.append((box_corners, text_val, "aruco", image_id))
 
         return boxes
-    
+
     def group_boxes_by_overlap(self, boxes):
         grouped_boxes = []
         processed_boxes = set()
@@ -158,11 +168,11 @@ class Detector:
                 if inter_area / box1_area > 0.8 or inter_area / box2_area > 0.8:
                     group.append(box2)
                     processed_boxes.add(j)
-            
+
             grouped_boxes.append(group)
-        
+
         return grouped_boxes
-    
+
     def filter_boxes(self, boxes):
         if self.images is None or len(self.images) == 0:
             image_count = 1
@@ -188,7 +198,7 @@ class Detector:
         # Final box including label
         combined_box = (mean_box, group[0][1])
         return combined_box
-    
+
     def get_overall_box(self, boxes):
         flat_bounds = []
 
@@ -198,12 +208,12 @@ class Detector:
 
         xs, ys = zip(*flat_bounds)
         return [
-            (min(xs), min(ys)), 
-            (max(xs), min(ys)), 
-            (max(xs), max(ys)), 
-            (min(xs), max(ys))
+            (min(xs), min(ys)),
+            (max(xs), min(ys)),
+            (max(xs), max(ys)),
+            (min(xs), max(ys)),
         ]
-    
+
     def merge_ocr_boxes(self, boxes):
         # Merge OCR boxes into a single box
 
@@ -216,14 +226,14 @@ class Detector:
         # Create a new box with the merged label
         merged_box = (merged_box, merged_label, "ocr", boxes[0][3])
         return merged_box
-    
+
     def merge_ocr_group(self, group):
         # Group boxes by image ID
         grouped_by_image = defaultdict(list)
         for box in group:
             image_id = box[3]
             grouped_by_image[image_id].append(box)
-        
+
         # Merge OCR boxes that belong to the same image
         merged_boxes = []
         for image_id, boxes in grouped_by_image.items():
@@ -234,36 +244,39 @@ class Detector:
                 merged_boxes.append(boxes[0])
 
         return merged_boxes
-    
+
     def find_consensus_label(self, labels: List[str], similarity_threshold=0.8):
         # Group similar labels
         label_groups = defaultdict(list)
-        
+
         # First pass: group by exact matches
         exact_counts = defaultdict(int)
         for lbl in labels:
             exact_counts[lbl] += 1
-        
+
         # Second pass: fuzzy match remaining
         for label in exact_counts.keys():
             matched = False
             for existing in label_groups:
                 # Normalized similarity (0-1)
-                similarity = 1 - (lev_dist(label, existing) / max(len(label), len(existing)))
+                similarity = 1 - (
+                    lev_dist(label, existing) / max(len(label), len(existing))
+                )
                 if similarity >= similarity_threshold:
                     label_groups[existing].append(label)
                     matched = True
                     break
             if not matched:
                 label_groups[label] = [label]
-    
+
         # Find the group with highest total count
-        best_group = max(label_groups.items(), 
-                        key=lambda x: sum(exact_counts[lbl] for lbl in x[1]))
-        
+        best_group = max(
+            label_groups.items(), key=lambda x: sum(exact_counts[lbl] for lbl in x[1])
+        )
+
         # Return the most frequent version in the best group
         return max(best_group[1], key=lambda x: exact_counts[x])
-    
+
     def combine_ocr_group(self, group):
         # Find most common label in the group
         labels = [box[1] for box in group]
@@ -278,13 +291,10 @@ class Detector:
 
         return combined_box
 
-    def combine_boxes(
-        self,
-        all_detected_boxes
-    ):
+    def combine_boxes(self, all_detected_boxes):
         if all_detected_boxes is None or len(all_detected_boxes) == 0:
             return []
-        
+
         combined_boxes = []
 
         grouped_boxes = self.group_boxes_by_overlap(all_detected_boxes)
@@ -304,7 +314,6 @@ class Detector:
                     combined_boxes.append(box)
 
         return combined_boxes
-
 
     def detect_code(self):
         if not self.images:

@@ -441,7 +441,7 @@ class Projector:
             )  # Red for error box
 
         return self.output_image, py_box
-    
+
     def display_idle_projection(self, code_box=None):
         # Reset output_image
         self.load_output_image()
@@ -461,15 +461,15 @@ class Projector:
                 ],
                 dtype=int,
             )
-        
+
         # Display the helper code in the box
         self.display_text_in_box(
-                settings["HELPER_CODE"],
-                code_box,
-                font_scale=0.6,
-                font=cv2.FONT_HERSHEY_SIMPLEX,
-                thickness=1,
-            )
+            settings["HELPER_CODE"],
+            code_box,
+            font_scale=0.6,
+            font=cv2.FONT_HERSHEY_SIMPLEX,
+            thickness=1,
+        )
 
         return self.output_image
 

@@ -20,7 +20,7 @@ while running:
     cv2.imshow(window_name, frame)
 
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
+    if key == ord("q"):
         running = False
 
 capture.release()

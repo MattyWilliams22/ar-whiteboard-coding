@@ -4,30 +4,41 @@ import numpy as np
 from code_detection.markers.keywords import get_keyword
 from settings import settings
 
+
 def transform_bounding_boxes(bboxs):
     ARUCO_COORDS = np.array([[-1, 1], [1, 1], [1, -1], [-1, -1]], dtype=np.float32)
-    CARD_COORDS = np.array([[-1.3, 1.3], [8.2, 1.3], [8.2, -1.3], [-1.3, -1.3]], dtype=np.float32)
-    
+    CARD_COORDS = np.array(
+        [[-1.3, 1.3], [8.2, 1.3], [8.2, -1.3], [-1.3, -1.3]], dtype=np.float32
+    )
+
     transformed_bboxs = []
-    
+
     for bbox in bboxs:
-        pixel_coords = np.array(bbox, dtype=np.float32).reshape(1, 4, 2)  # Ensure it's the right shape
-        
+        pixel_coords = np.array(bbox, dtype=np.float32).reshape(
+            1, 4, 2
+        )  # Ensure it's the right shape
+
         # Compute transformation matrix from pixel coordinates to ARUCO_COORDS
-        transform_matrix = cv2.getPerspectiveTransform(pixel_coords.reshape(4, 2), ARUCO_COORDS)
-        
+        transform_matrix = cv2.getPerspectiveTransform(
+            pixel_coords.reshape(4, 2), ARUCO_COORDS
+        )
+
         # Compute inverse transformation matrix
         inverse_matrix = np.linalg.inv(transform_matrix)
-        
+
         # Transform CARD_COORDS to new pixel coordinates
-        new_bbox = cv2.perspectiveTransform(CARD_COORDS.reshape(1, 4, 2), inverse_matrix)
-        
+        new_bbox = cv2.perspectiveTransform(
+            CARD_COORDS.reshape(1, 4, 2), inverse_matrix
+        )
+
         transformed_bboxs.append(new_bbox)
-    
+
     return transformed_bboxs
+
 
 import numpy as np
 import cv2
+
 
 def transform_bounding_boxes_simple(bboxes, ignore=[]):
     transformed_bboxes = []
@@ -46,7 +57,6 @@ def transform_bounding_boxes_simple(bboxes, ignore=[]):
         # Calculate the average
         horizontal_vector = (top_vector + bottom_vector) / 2
 
-
         left_vector = (bbox[3] - bbox[0]) / 2
         right_vector = (bbox[2] - bbox[1]) / 2
         # Calculate the average
@@ -59,17 +69,23 @@ def transform_bounding_boxes_simple(bboxes, ignore=[]):
         bottom_right = top_right + 2.6 * vertical_vector
 
         # Construct the new bounding box
-        new_bbox = np.array([[
-            [top_left[0], top_left[1]],
-            [top_right[0], top_right[1]],
-            [bottom_right[0], bottom_right[1]],
-            [bottom_left[0], bottom_left[1]]
-        ]], dtype=np.float32)
+        new_bbox = np.array(
+            [
+                [
+                    [top_left[0], top_left[1]],
+                    [top_right[0], top_right[1]],
+                    [bottom_right[0], bottom_right[1]],
+                    [bottom_left[0], bottom_left[1]],
+                ]
+            ],
+            dtype=np.float32,
+        )
 
         # transformed_bboxes.append(new_bbox)
         transformed_bboxes.append(new_bbox)
 
     return transformed_bboxes
+
 
 # ArUco marker detection function
 def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
@@ -84,12 +100,15 @@ def detect_aruco_markers(image, dictionary=cv2.aruco.DICT_4X4_50):
     else:
         ignore = []
     corners = transform_bounding_boxes_simple(corners, ignore)
-    
+
     return image, corners, ids
+
 
 # Function to create a mask for ArUco markers
 def create_aruco_mask(image, bboxs, buffer=10):
-    mask = np.zeros(image.shape[:2], dtype=np.uint8)  # Create a blank mask of the same size as the image
+    mask = np.zeros(
+        image.shape[:2], dtype=np.uint8
+    )  # Create a blank mask of the same size as the image
 
     if bboxs is None:
         return mask
@@ -123,6 +142,7 @@ def create_aruco_mask(image, bboxs, buffer=10):
 
     return mask
 
+
 # Function to draw ArUco-associated keywords on the image after both stages of detection
 def draw_aruco_keywords(image, bboxs, ids):
     if bboxs is None:
@@ -140,7 +160,7 @@ def draw_aruco_keywords(image, bboxs, ids):
         dir_y = box[1][1] - box[0][1]
 
         # Normalize the direction vector to get the correct orientation
-        magnitude = np.sqrt(dir_x ** 2 + dir_y ** 2)
+        magnitude = np.sqrt(dir_x**2 + dir_y**2)
         dir_x /= magnitude
         dir_y /= magnitude
 
@@ -157,7 +177,15 @@ def draw_aruco_keywords(image, bboxs, ids):
 
         # Draw the corresponding keyword to the right of the marker
         text = get_keyword(ids[i][0])
-        cv2.putText(image, text, (text_x, text_y), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(
+            image,
+            text,
+            (text_x, text_y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 0),
+            2,
+            cv2.LINE_AA,
+        )
 
     return image

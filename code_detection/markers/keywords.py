@@ -37,6 +37,7 @@ ALL_CORNER_MARKERS = {
     "Top Left",
 }
 
+
 # Function to map marker IDs to text
 def get_keyword(index):
     match index:

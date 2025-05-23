@@ -21,15 +21,18 @@ default_settings = {
 
 settings = default_settings.copy()
 
+
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, "r") as f:
             loaded = json.load(f)
             settings.update(loaded)
 
+
 def save_settings():
     with open(SETTINGS_FILE, "w") as f:
         json.dump(settings, f, indent=4)
+
 
 # Load settings on import
 load_settings()

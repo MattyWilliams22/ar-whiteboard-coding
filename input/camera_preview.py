@@ -2,8 +2,11 @@ import cv2
 import threading
 import time
 
+
 class CameraPreviewThread(threading.Thread):
-    def __init__(self, source=0, resolution=(3840, 2160), fps=10, window_name="Camera Feed"):
+    def __init__(
+        self, source=0, resolution=(3840, 2160), fps=10, window_name="Camera Feed"
+    ):
         super().__init__()
         self.source = source
         self.resolution = resolution

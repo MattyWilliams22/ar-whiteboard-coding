@@ -119,7 +119,6 @@ def run_code_from_frame(preview, fsm):
             cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
             return None, code_box
-        
 
         # Display full projection
         projector = Projector(
@@ -139,15 +138,15 @@ def run_code_from_frame(preview, fsm):
 
     except Exception as e:
         error_projection = Projector(
-                None,
-                None,
-                str(e),
-                None,
-                None,
-                output_size=tuple(settings["PROJECTION_RESOLUTION"]),
-                marker_size=settings["CORNER_MARKER_SIZE"],
-                debug_mode=settings["PROJECT_IMAGE"],
-            ).display_error_projection()
+            None,
+            None,
+            str(e),
+            None,
+            None,
+            output_size=tuple(settings["PROJECTION_RESOLUTION"]),
+            marker_size=settings["CORNER_MARKER_SIZE"],
+            debug_mode=settings["PROJECT_IMAGE"],
+        ).display_error_projection()
         cv2.imshow("Output", error_projection)
         fsm.transition(Event.ERROR_OCCURRED)
         return None, None
@@ -158,6 +157,7 @@ def show_settings_menu(camera_preview=None, voice_thread=None):
     app = SettingsMenu(root, camera_preview, voice_thread)
     root.mainloop()
     load_settings()
+
 
 def save_code_to_file(python_code):
     if python_code is None:
@@ -181,6 +181,7 @@ def save_code_to_file(python_code):
         file.write(python_code)
 
     print(f"Code saved to {full_path}")
+
 
 def main():
     fsm = SystemFSM()
