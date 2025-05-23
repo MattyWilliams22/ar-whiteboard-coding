@@ -2,6 +2,7 @@ from typing import List
 import cv2
 import numpy as np
 from collections import defaultdict
+import concurrent.futures
 from Levenshtein import distance as lev_dist
 from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask
 from code_detection.ocr.paddleocr import detect_paddleocr_text
@@ -334,11 +335,17 @@ class Detector:
             print("Error: No images provided")
             return None, None
 
-        # Detect code in the images
+        # Detect code from images
+        # Use ThreadPoolExecutor to process images in parallel
         all_detected_boxes = []
-        for i, img in enumerate(self.images):
-            boxes = self.detect_from_image(img, i)
-            all_detected_boxes.extend(boxes)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+            executor.submit(self.detect_from_image, img, i)
+            for i, img in enumerate(self.images)
+            ]
+            results = [future.result() for future in futures]
+            for boxes in results:
+                all_detected_boxes.extend(boxes)
 
         if len(self.images) > 1:
             # If multiple images, combine boxes from all images
