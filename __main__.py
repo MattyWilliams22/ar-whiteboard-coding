@@ -2,7 +2,10 @@ import cv2
 import os
 import time
 import tkinter as tk
+from accuracy_metrics import analyse_code_quality, save_metrics_to_csv
 import numpy as np
+import csv
+from datetime import datetime
 from threading import Lock
 from input.camera_preview import CameraPreviewThread
 from input.voice_commands import VoiceCommandThread
@@ -18,11 +21,14 @@ from fsm.states import SystemState, Event
 from fsm.state_machine import SystemFSM
 from dotenv import load_dotenv
 
+GROUND_TRUTH_FILE = "evaluation_programs/program_1.py"
+
 load_dotenv()
 
 
 def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
     """Collect valid images from the camera preview window."""
+    start_time = time.time()
     valid_images = []
     attempts = 0
     while len(valid_images) < num_required and attempts < max_attempts:
@@ -43,40 +49,99 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
             )
         attempts += 1
         time.sleep(interval)
-    return valid_images
+    end_time = time.time()
+    return valid_images, end_time - start_time
 
 
 def process_images(warped_images):
     """Process the images to detect code, tokenise, parse, and execute."""
+    timing_data = {}
 
+    # Code detection
+    start_time = time.time()
     detector = Detector(warped_images)
     warped_image, boxes = detector.detect_code()
-    if warped_image is None or boxes is None:
-        return warped_image, boxes, None, "Error: Code detection failed", None
+    timing_data["detection"] = time.time() - start_time
 
+    if warped_image is None or boxes is None:
+        return (
+            warped_image,
+            boxes,
+            None,
+            "Error: Code detection failed",
+            None,
+            timing_data,
+        )
+
+    # Tokenisation
+    start_time = time.time()
     tokeniser = Tokeniser(boxes)
     tokens = tokeniser.tokenise()
+    timing_data["tokenisation"] = time.time() - start_time
     print(tokeniser.tokens_to_string())
     if tokens is None:
-        return warped_image, boxes, None, "Error: Tokenisation failed", None
+        return (
+            warped_image,
+            boxes,
+            None,
+            "Error: Tokenisation failed",
+            None,
+            timing_data,
+        )
 
+    # Parsing
+    start_time = time.time()
     parser = Parser(tokens)
     program, python_code, error_message, error_box = parser.parse()
+    timing_data["parsing"] = time.time() - start_time
     if program is None or python_code is None:
-        return warped_image, boxes, python_code, error_message, error_box
+        return warped_image, boxes, python_code, error_message, error_box, timing_data
 
+    # Execution
+    start_time = time.time()
     executor = Executor(python_code)
     code_output, error_message, python_code = executor.execute_in_sandbox()
+    timing_data["execution"] = time.time() - start_time
     if error_message is not None:
-        return warped_image, boxes, python_code, error_message, None
+        return warped_image, boxes, python_code, error_message, None, timing_data
 
-    return warped_image, boxes, python_code, code_output, error_box
+    return warped_image, boxes, python_code, code_output, error_box, timing_data
+
+
+def save_timing_data(timing_data):
+    """Save timing data to a CSV file."""
+    filename = "timing_data.csv"
+    file_exists = os.path.isfile(filename)
+
+    # Prepare data row
+    row = {
+        "timestamp": datetime.now().isoformat(),
+        "total_time": timing_data.get("total", 0),
+        "image_capture": timing_data.get("image_capture", 0),
+        "detection": timing_data.get("detection", 0),
+        "tokenisation": timing_data.get("tokenisation", 0),
+        "parsing": timing_data.get("parsing", 0),
+        "execution": timing_data.get("execution", 0),
+        "projection": timing_data.get("projection", 0),
+        "success": timing_data.get("success", False),
+    }
+
+    # Write to CSV
+    with open(filename, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(row)
 
 
 def detect_and_run_code(preview, fsm):
     """Detect and run the whiteboard code"""
+    timing_data = {}
+    total_start_time = time.time()
+
     try:
         # Display minimal projection
+        start_time = time.time()
         projector = Projector(
             None,
             None,
@@ -90,9 +155,14 @@ def detect_and_run_code(preview, fsm):
         minimal_projection = projector.display_minimal_projection()
         cv2.imshow("Output", minimal_projection)
         cv2.waitKey(1)
+        timing_data["projection"] = time.time() - start_time
 
         # Collect valid images
-        valid_images = collect_valid_images(preview, settings["NUM_VALID_IMAGES"])
+        valid_images, capture_time = collect_valid_images(
+            preview, settings["NUM_VALID_IMAGES"]
+        )
+        timing_data["image_capture"] = capture_time
+
         if len(valid_images) < settings["NUM_VALID_IMAGES"]:
             error_projection = Projector(
                 None,
@@ -106,10 +176,25 @@ def detect_and_run_code(preview, fsm):
             ).display_error_projection()
             cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
+            timing_data["total_time"] = time.time() - total_start_time
+            timing_data["success"] = False
+            save_metrics_to_csv(timing_data, {})
             return None, None
 
         # Detect and execute code
-        image, boxes, python_code, code_output, error_box = process_images(valid_images)
+        image, boxes, python_code, code_output, error_box, process_timing = (
+            process_images(valid_images)
+        )
+        timing_data.update(process_timing)
+
+        # Calculate accuracy metrics if we have code
+        accuracy_metrics = {}
+        if python_code:
+            accuracy_metrics = analyse_code_quality(
+                python_code,
+                ground_truth_path=GROUND_TRUTH_FILE,
+            )
+
         if code_output is None or python_code is None:
             error_projection, code_box = Projector(
                 image,
@@ -123,9 +208,13 @@ def detect_and_run_code(preview, fsm):
             ).display_full_projection()
             cv2.imshow("Output", error_projection)
             fsm.transition(Event.ERROR_OCCURRED)
+            timing_data["total_time"] = time.time() - total_start_time
+            timing_data["success"] = False
+            save_metrics_to_csv(timing_data, accuracy_metrics)
             return None, code_box
 
         # Display full projection
+        start_time = time.time()
         projector = Projector(
             image,
             python_code,
@@ -138,7 +227,12 @@ def detect_and_run_code(preview, fsm):
         )
         projection, code_box = projector.display_full_projection()
         cv2.imshow("Output", projection)
+        timing_data["projection"] += time.time() - start_time
+
         fsm.transition(Event.FINISH_RUN)
+        timing_data["total_time"] = time.time() - total_start_time
+        timing_data["success"] = True
+        save_metrics_to_csv(timing_data, accuracy_metrics)
         return python_code, code_box
 
     except Exception as e:
@@ -154,6 +248,9 @@ def detect_and_run_code(preview, fsm):
         ).display_error_projection()
         cv2.imshow("Output", error_projection)
         fsm.transition(Event.ERROR_OCCURRED)
+        timing_data["total_time"] = time.time() - total_start_time
+        timing_data["success"] = False
+        save_metrics_to_csv(timing_data, {})
         return None, None
 
 
