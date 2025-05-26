@@ -110,37 +110,68 @@ def calculate_accuracy_metrics(reference, ocr_output):
 
 
 def save_metrics_to_csv(timing_data, accuracy_metrics):
-    """Save both timing and accuracy metrics to a CSV file."""
+    """Save metrics to CSV with guaranteed headers and complete columns."""
     filename = "performance_metrics.csv"
+
+    # Define complete field structure with defaults (order matters for CSV)
+    required_fields = [
+        # Timing metrics
+        "total_time",
+        "image_capture",
+        "detection",
+        "tokenisation",
+        "parsing",
+        "execution",
+        "projection",
+        # Accuracy metrics
+        "cer",
+        "wer",
+        "symbol_accuracy",
+        "levenshtein_similarity",
+        # Metadata
+        "timestamp",
+        "ground_truth_file",
+        "success",
+    ]
+
+    # Create default dict with None values
+    default_values = {field: None for field in required_fields}
+    default_values.update(
+        {
+            "timestamp": datetime.now().isoformat(),
+            "success": False,
+            "cer": 1.0,  # Default failure values
+            "wer": 1.0,
+            "symbol_accuracy": 0.0,
+            "levenshtein_similarity": 0.0,
+        }
+    )
+
+    # Merge with incoming data
+    combined_data = {**default_values, **timing_data, **accuracy_metrics}
+
+    # Convert None to empty strings
+    combined_data = {k: "" if v is None else v for k, v in combined_data.items()}
+
+    # Check if file exists and get existing headers if it does
     file_exists = os.path.isfile(filename)
+    existing_headers = []
 
-    # Combine timing and accuracy data
-    combined_data = {
-        "timestamp": datetime.now().isoformat(),
-        **timing_data,
-        **accuracy_metrics,
-        "success": timing_data.get("success", False),
-    }
+    if file_exists:
+        with open(filename, "r") as f:
+            reader = csv.reader(f)
+            existing_headers = next(reader, [])
 
-    # Ensure all expected fields are present
-    default_fields = {
-        "ground_truth_file": None,
-        "cer": None,
-        "wer": None,
-        "symbol_accuracy": None,
-        "levenshtein_similarity": None,
-    }
-
-    # Update with actual values while maintaining all fields
-    for field in default_fields:
-        if field not in combined_data:
-            combined_data[field] = default_fields[field]
+    # Determine if we need to write headers
+    write_headers = not file_exists or (existing_headers != required_fields)
 
     # Write to CSV
     with open(filename, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=combined_data.keys())
-        if not file_exists:
+        writer = csv.DictWriter(f, fieldnames=required_fields)
+
+        if write_headers:
             writer.writeheader()
+
         writer.writerow(combined_data)
 
 
@@ -159,15 +190,14 @@ def compare_with_ground_truth(generated_code, ground_truth_file):
 def analyse_code_quality(python_code, ground_truth_path=None):
     """Analyse code quality and compare with ground truth if available."""
     metrics = {
-        "cer": None,
-        "wer": None,
-        "symbol_accuracy": None,
-        "levenshtein_similarity": None,
-        "ground_truth_file": None,
+        "cer": 1.0,
+        "wer": 1.0,
+        "symbol_accuracy": 0.0,
+        "levenshtein_similarity": 0.0,
+        "ground_truth_file": ground_truth_path,
     }
 
     if ground_truth_path:
-        metrics["ground_truth_file"] = os.path.basename(ground_truth_path)
         ground_truth_metrics = compare_with_ground_truth(python_code, ground_truth_path)
         if ground_truth_metrics:
             metrics.update(ground_truth_metrics)

@@ -192,7 +192,7 @@ def detect_and_run_code(preview, fsm):
         if python_code:
             accuracy_metrics = analyse_code_quality(
                 python_code,
-                GROUND_TRUTH_FILE,
+                ground_truth_path=GROUND_TRUTH_FILE,
             )
 
         if code_output is None or python_code is None:

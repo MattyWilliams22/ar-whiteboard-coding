@@ -14,3 +14,4 @@ settings.json
 .env
 camera_cache.json
 code_saves
+performance_metrics.csv
