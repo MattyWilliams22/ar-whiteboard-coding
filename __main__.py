@@ -2,6 +2,7 @@ import cv2
 import os
 import time
 import tkinter as tk
+from accuracy_metrics import analyse_code_quality, save_metrics_to_csv
 import numpy as np
 import csv
 from datetime import datetime
@@ -19,6 +20,8 @@ from settings import settings, load_settings
 from fsm.states import SystemState, Event
 from fsm.state_machine import SystemFSM
 from dotenv import load_dotenv
+
+GROUND_TRUTH_FILE = "evaluation_programs/program_1.py"
 
 load_dotenv()
 
@@ -175,7 +178,7 @@ def detect_and_run_code(preview, fsm):
             fsm.transition(Event.ERROR_OCCURRED)
             timing_data["total_time"] = time.time() - total_start_time
             timing_data["success"] = False
-            save_timing_data(timing_data)
+            save_metrics_to_csv(timing_data, {})
             return None, None
 
         # Detect and execute code
@@ -183,6 +186,14 @@ def detect_and_run_code(preview, fsm):
             process_images(valid_images)
         )
         timing_data.update(process_timing)
+
+        # Calculate accuracy metrics if we have code
+        accuracy_metrics = {}
+        if python_code:
+            accuracy_metrics = analyse_code_quality(
+                python_code,
+                GROUND_TRUTH_FILE,
+            )
 
         if code_output is None or python_code is None:
             error_projection, code_box = Projector(
@@ -199,7 +210,7 @@ def detect_and_run_code(preview, fsm):
             fsm.transition(Event.ERROR_OCCURRED)
             timing_data["total_time"] = time.time() - total_start_time
             timing_data["success"] = False
-            save_timing_data(timing_data)
+            save_metrics_to_csv(timing_data, accuracy_metrics)
             return None, code_box
 
         # Display full projection
@@ -221,7 +232,7 @@ def detect_and_run_code(preview, fsm):
         fsm.transition(Event.FINISH_RUN)
         timing_data["total_time"] = time.time() - total_start_time
         timing_data["success"] = True
-        save_timing_data(timing_data)
+        save_metrics_to_csv(timing_data, accuracy_metrics)
         return python_code, code_box
 
     except Exception as e:
@@ -239,7 +250,7 @@ def detect_and_run_code(preview, fsm):
         fsm.transition(Event.ERROR_OCCURRED)
         timing_data["total_time"] = time.time() - total_start_time
         timing_data["success"] = False
-        save_timing_data(timing_data)
+        save_metrics_to_csv(timing_data, {})
         return None, None
 
 
