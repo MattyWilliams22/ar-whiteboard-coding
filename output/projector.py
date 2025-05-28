@@ -364,16 +364,16 @@ class Projector:
                     split_x = (min_x + max_x) / 2
                     if py_min_x < out_min_x:
                         # Python box is to the left
-                        py_box[1][0] = split_x
-                        py_box[2][0] = split_x
-                        out_box[0][0] = split_x
-                        out_box[3][0] = split_x
+                        py_box[1][0] = split_x - 1
+                        py_box[2][0] = split_x - 1
+                        out_box[0][0] = split_x + 1
+                        out_box[3][0] = split_x + 1
                     else:
                         # Output box is to the left
-                        out_box[1][0] = split_x
-                        out_box[2][0] = split_x
-                        py_box[0][0] = split_x
-                        py_box[3][0] = split_x
+                        out_box[1][0] = split_x - 1
+                        out_box[2][0] = split_x - 1
+                        py_box[0][0] = split_x + 1
+                        py_box[3][0] = split_x + 1
                 else:
                     # Split horizontally
                     min_y = min(py_min_y, out_min_y)
@@ -381,16 +381,16 @@ class Projector:
                     split_y = (min_y + max_y) / 2
                     if py_min_y < out_min_y:
                         # Python box is above
-                        py_box[2][1] = split_y
-                        py_box[3][1] = split_y
-                        out_box[0][1] = split_y
-                        out_box[1][1] = split_y
+                        py_box[2][1] = split_y - 1
+                        py_box[3][1] = split_y - 1
+                        out_box[0][1] = split_y + 1
+                        out_box[1][1] = split_y + 1
                     else:
                         # Output box is above
-                        out_box[2][1] = split_y
-                        out_box[3][1] = split_y
-                        py_box[0][1] = split_y
-                        py_box[1][1] = split_y
+                        out_box[2][1] = split_y - 1
+                        out_box[3][1] = split_y - 1
+                        py_box[0][1] = split_y + 1
+                        py_box[1][1] = split_y + 1
 
         # Convert to numpy arrays if they exist
         if py_box is not None:
