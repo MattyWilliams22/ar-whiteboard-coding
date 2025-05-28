@@ -352,8 +352,11 @@ class Projector:
                 py_min_x, py_min_y, py_max_x, py_max_y = get_bbox_extents(py_box)
                 out_min_x, out_min_y, out_max_x, out_max_y = get_bbox_extents(out_box)
 
-                x_diff = out_min_x - py_max_x
-                y_diff = out_min_y - py_max_y
+                py_avg_x, py_avg_y = (py_min_x + py_max_x) / 2, (py_min_y + py_max_y) / 2
+                out_avg_x, out_avg_y = (out_min_x + out_max_x) / 2, (out_min_y + out_max_y) / 2
+
+                x_diff = out_avg_x - py_avg_x
+                y_diff = out_avg_y - py_avg_y
                 if abs(x_diff) > abs(y_diff):
                     # Split vertically
                     min_x = min(py_min_x, out_min_x)
