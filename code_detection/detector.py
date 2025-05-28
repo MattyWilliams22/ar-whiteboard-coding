@@ -157,31 +157,40 @@ class Detector:
         return boxes
 
     def group_boxes_by_overlap(self, boxes):
-        # Group boxes into clusters that significantly overlap each other
-        grouped_boxes = []
-        processed_boxes = set()
-
-        for i, box1 in enumerate(boxes):
-            if i in processed_boxes:
-                continue
-
-            group = [box1]
-            processed_boxes.add(i)
-
-            for j, box2 in enumerate(boxes):
-                if j in processed_boxes or i == j:
-                    continue
-
+        # Initialize each box as its own group
+        parents = [i for i in range(len(boxes))]
+        
+        def find(u):
+            while parents[u] != u:
+                parents[u] = parents[parents[u]]  # Path compression
+                u = parents[u]
+            return u
+        
+        # Union boxes that overlap
+        for i in range(len(boxes)):
+            for j in range(i+1, len(boxes)):
+                box1 = boxes[i]
+                box2 = boxes[j]
+                
                 inter_area = compute_intersection_area(box1[0], box2[0])
                 box1_area = cv2.contourArea(np.array(box1[0]))
                 box2_area = cv2.contourArea(np.array(box2[0]))
+                
                 if inter_area / box1_area > 0.8 or inter_area / box2_area > 0.8:
-                    group.append(box2)
-                    processed_boxes.add(j)
-
-            grouped_boxes.append(group)
-
-        return grouped_boxes
+                    root_i = find(i)
+                    root_j = find(j)
+                    if root_i != root_j:
+                        parents[root_j] = root_i
+        
+        # Group boxes by their root parent
+        groups = {}
+        for i in range(len(boxes)):
+            root = find(i)
+            if root not in groups:
+                groups[root] = []
+            groups[root].append(boxes[i])
+        
+        return list(groups.values())
 
     def filter_boxes(self, boxes):
         # Filter boxes based on their type and the number of images
@@ -328,6 +337,13 @@ class Detector:
                     combined_boxes.append(box)
 
         return combined_boxes
+    
+    def strip_boxes(self, boxes):
+        # Strip boxes to only contain the coordinates and label
+        stripped_boxes = []
+        for box, label, _, _ in boxes:
+            stripped_boxes.append((box, label))
+        return stripped_boxes
 
     def detect_code(self):
         if not self.images:
@@ -345,7 +361,7 @@ class Detector:
             final_boxes = self.combine_boxes(all_detected_boxes)
         else:
             # If only one image, use the detected boxes directly
-            final_boxes = all_detected_boxes
+            final_boxes = self.strip_boxes(all_detected_boxes)
         return (
             self.images[0],
             final_boxes,
