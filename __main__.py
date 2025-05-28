@@ -26,28 +26,35 @@ GROUND_TRUTH_FILE = "evaluation_programs/program_1.py"
 load_dotenv()
 
 
-def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
+def collect_valid_images(preview, num_required, max_attempts=50, interval=None):
     """Collect valid images from the camera preview window."""
     start_time = time.time()
     valid_images = []
     attempts = 0
+    
+    # Use CAMERA_FPS from settings to set interval if not provided
+    if interval is None:
+        interval = 1.0 / settings["CAMERA_FPS"] if settings["CAMERA_FPS"] > 0 else 0.1
+    
     while len(valid_images) < num_required and attempts < max_attempts:
         frame = preview.get_frame()
         if frame is None:
-            time.sleep(interval)
+            time.sleep(interval)  # Only sleep if we need to retry
             attempts += 1
             continue
 
         preprocessor = Preprocessor(frame)
         warped_image = preprocessor.preprocess_image()
+        
         if warped_image is not None:
             valid_images.append(warped_image)
             print(f"Captured valid image {len(valid_images)} of {num_required}")
-            continue
+            # Don't sleep if we got the last required image
+            if len(valid_images) == num_required:
+                break
         else:
-            print(
-                f"Attempt {attempts + 1}/{max_attempts}: Not all corner markers detected."
-            )
+            print(f"Attempt {attempts + 1}/{max_attempts}: Not all corner markers detected.")
+        
         attempts += 1
         time.sleep(interval)
     end_time = time.time()
