@@ -131,11 +131,12 @@ class Detector:
 
                 # Check if the detected text is a keyword
                 # and if it is, transform the box to card coordinates
-                if text_val.upper() in ALL_KEYWORDS:
+                upper_text_val = text_val.upper()
+                if upper_text_val in ALL_KEYWORDS or upper_text_val in ["PYTHON", "RESULTS"]:
                     corners = self.text_box_to_card(corners, aruco_corners)
-                    if text_val.upper() == "ELSEIF":
-                        text_val = "ELSE IF"
-                    boxes.append((corners, text_val, "aruco", image_id))
+                    if upper_text_val == "ELSEIF":
+                        upper_text_val = "ELSE IF"
+                    boxes.append((corners, upper_text_val, "aruco", image_id))
                 else:
                     boxes.append((corners, text_val, "ocr", image_id))
 
