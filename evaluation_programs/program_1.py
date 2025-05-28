@@ -1,5 +1,5 @@
-logged_in = False
-if logged_in:
-    print("Welcome back!")
+sleepy = False
+if sleepy:
+    print("Time to sleep!")
 else:
-    print("Please log in.")
+    print("Not yet.")

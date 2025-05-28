@@ -43,6 +43,7 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=0.2):
         if warped_image is not None:
             valid_images.append(warped_image)
             print(f"Captured valid image {len(valid_images)} of {num_required}")
+            continue
         else:
             print(
                 f"Attempt {attempts + 1}/{max_attempts}: Not all corner markers detected."
@@ -158,6 +159,7 @@ def detect_and_run_code(preview, fsm):
         timing_data["projection"] = time.time() - start_time
 
         # Collect valid images
+        timing_data["detection_confidence"] = settings["NUM_VALID_IMAGES"]
         valid_images, capture_time = collect_valid_images(
             preview, settings["NUM_VALID_IMAGES"]
         )
@@ -194,7 +196,6 @@ def detect_and_run_code(preview, fsm):
                 python_code,
                 ground_truth_path=GROUND_TRUTH_FILE,
             )
-
         if code_output is None or python_code is None:
             error_projection, code_box = Projector(
                 image,
@@ -212,7 +213,7 @@ def detect_and_run_code(preview, fsm):
             timing_data["success"] = False
             save_metrics_to_csv(timing_data, accuracy_metrics)
             return None, code_box
-
+        
         # Display full projection
         start_time = time.time()
         projector = Projector(

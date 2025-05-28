@@ -131,6 +131,7 @@ def save_metrics_to_csv(timing_data, accuracy_metrics):
         # Metadata
         "timestamp",
         "ground_truth_file",
+        "detection_confidence",
         "success",
     ]
 
