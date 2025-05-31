@@ -346,13 +346,6 @@ class Detector:
             stripped_boxes.append((box, label))
         return stripped_boxes
 
-    def strip_boxes(self, boxes):
-        # Strip boxes to only contain the coordinates and label
-        stripped_boxes = []
-        for box, label, _, _ in boxes:
-            stripped_boxes.append((box, label))
-        return stripped_boxes
-
     def detect_code(self):
         if not self.images:
             print("Error: No images provided")
