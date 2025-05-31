@@ -25,11 +25,11 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=None):
     """Collect valid images from the camera preview window."""
     valid_images = []
     attempts = 0
-    
+
     # Use CAMERA_FPS from settings to set interval if not provided
     if interval is None:
         interval = 1.0 / settings["CAMERA_FPS"] if settings["CAMERA_FPS"] > 0 else 0.1
-    
+
     while len(valid_images) < num_required and attempts < max_attempts:
         frame = preview.get_frame()
         if frame is None:
@@ -39,7 +39,7 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=None):
 
         preprocessor = Preprocessor(frame)
         warped_image = preprocessor.preprocess_image()
-        
+
         if warped_image is not None:
             valid_images.append(warped_image)
             print(f"Captured valid image {len(valid_images)} of {num_required}")
@@ -47,11 +47,13 @@ def collect_valid_images(preview, num_required, max_attempts=50, interval=None):
             if len(valid_images) == num_required:
                 break
         else:
-            print(f"Attempt {attempts + 1}/{max_attempts}: Not all corner markers detected.")
-        
+            print(
+                f"Attempt {attempts + 1}/{max_attempts}: Not all corner markers detected."
+            )
+
         attempts += 1
         time.sleep(interval)  # Sleep only if we need another frame
-    
+
     return valid_images
 
 
