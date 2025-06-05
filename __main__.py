@@ -68,8 +68,13 @@ def process_images(warped_images):
     # Code detection
     start_time = time.time()
     detector = Detector(warped_images)
-    warped_image, boxes = detector.detect_code()
-    timing_data["detection"] = time.time() - start_time
+    warped_image, boxes, timings = detector.detect_code()
+    detection_time = time.time() - start_time
+    timing_data["detection"] = detection_time
+    # Add timings from detector if available
+    if isinstance(timings, dict):
+        for k, v in timings.items():
+            timing_data[f"detection_{k}"] = v
 
     if warped_image is None or boxes is None:
         return (
@@ -127,6 +132,11 @@ def save_timing_data(timing_data):
         "total_time": timing_data.get("total", 0),
         "image_capture": timing_data.get("image_capture", 0),
         "detection": timing_data.get("detection", 0),
+        "aruco_detection": timing_data.get("aruco_detection", 0),
+        "mask_creation": timing_data.get("mask_creation", 0),
+        "text_detection": timing_data.get("text_detection", 0),
+        "list_collection": timing_data.get("list_collection", 0),
+        "consensus_time": timing_data.get("consensus", 0),
         "tokenisation": timing_data.get("tokenisation", 0),
         "parsing": timing_data.get("parsing", 0),
         "execution": timing_data.get("execution", 0),

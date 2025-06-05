@@ -6,6 +6,7 @@ from Levenshtein import distance as lev_dist
 from code_detection.markers.aruco import detect_aruco_markers, create_aruco_mask
 from code_detection.ocr.paddleocr import detect_paddleocr_text
 from code_detection.markers.keywords import get_keyword, ALL_KEYWORDS
+import time
 
 
 def compute_iou(box1, box2):
@@ -105,17 +106,31 @@ class Detector:
         return new_box
 
     def detect_from_image(self, image, image_id):
-        # Detect ArUco markers in the image
+        timings = {}
+
+        # Time ArUco marker detection
+        t0 = time.perf_counter()
         image, aruco_corners, ids = detect_aruco_markers(image, self.aruco_dict_type)
+        t1 = time.perf_counter()
+        timings['aruco_detection'] = t1 - t0
+
         if image is None:
-            return [], []
+            return [], timings
 
-        # Create a mask for the detected ArUco markers
+        # Time mask creation
+        t2 = time.perf_counter()
         mask = create_aruco_mask(image, aruco_corners)
+        t3 = time.perf_counter()
+        timings['mask_creation'] = t3 - t2
 
-        # Detect text using PaddleOCR
+        # Time text detection
+        t4 = time.perf_counter()
         image, text = detect_paddleocr_text(image, mask)
+        t5 = time.perf_counter()
+        timings['text_detection'] = t5 - t4
 
+        # Time box creation
+        t6 = time.perf_counter()
         boxes = []
 
         # Add detected text boxes to list of boxes
@@ -154,8 +169,10 @@ class Detector:
                 )
                 text_val = get_keyword(ids[i][0])
                 boxes.append((box_corners, text_val, "aruco", image_id))
+        t7 = time.perf_counter()
+        timings['list_collection'] = t7 - t6
 
-        return boxes
+        return boxes, timings
 
     def group_boxes_by_overlap(self, boxes):
         # Initialize each box as its own group
@@ -349,24 +366,40 @@ class Detector:
     def detect_code(self):
         if not self.images:
             print("Error: No images provided")
-            return None, None
+            return None, None, None
 
         # Detect code in the images
         all_detected_boxes = []
-        for i, img in enumerate(self.images):
-            boxes = self.detect_from_image(img, i)
-            all_detected_boxes.extend(boxes)
+        timings_list = []
 
+        for i, img in enumerate(self.images):
+            boxes, timings = self.detect_from_image(img, i)
+            all_detected_boxes.extend(boxes)
+            timings_list.append(timings)
+
+        # Compute mean timings for each section
+        sum_timings = {}
+        if timings_list:
+            keys = timings_list[0].keys()
+            for key in keys:
+                sum_timings[key] = sum(t.get(key, 0) for t in timings_list)
+
+        # Time box combination
+        t0 = time.perf_counter()
         if len(self.images) > 1:
             # If multiple images, combine boxes from all images
             final_boxes = self.combine_boxes(all_detected_boxes)
         else:
             # If only one image, use the detected boxes directly
             final_boxes = self.strip_boxes(all_detected_boxes)
+        t1 = time.perf_counter()
+        sum_timings['consensus_time'] = t1 - t0
+
         return (
             self.images[0],
             final_boxes,
-        )  # Return one of the processed images and combined boxes
+            sum_timings,
+        )  # Return one of the processed images, combined boxes, and timings
 
     def set_images(self, images):
         self.images = images
