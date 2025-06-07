@@ -74,7 +74,7 @@ def process_images(warped_images):
     # Add timings from detector if available
     if isinstance(timings, dict):
         for k, v in timings.items():
-            timing_data[f"detection_{k}"] = v
+            timing_data[k] = v
 
     if warped_image is None or boxes is None:
         return (

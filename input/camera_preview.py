@@ -29,9 +29,38 @@ class CameraPreviewThread(threading.Thread):
             self.capture.release()
 
         self.capture = cv2.VideoCapture(self.source, cv2.CAP_DSHOW)
+        
+        # Set basic properties
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
         self.capture.set(cv2.CAP_PROP_FPS, self.fps)
+        
+        # Try to set the requested camera settings
+        try:
+            # Note: ISO setting might not work on all cameras
+            self.capture.set(cv2.CAP_PROP_ISO_SPEED, 80)  # Not universally supported
+            
+            # Exposure time (1/250 sec). Value is camera-specific, often in fractions
+            # For many cameras, exposure is set as 1/value (so 1/250 would be 250)
+            self.capture.set(cv2.CAP_PROP_EXPOSURE, 250)
+            
+            # White balance temperature (4300K)
+            self.capture.set(cv2.CAP_PROP_WB_TEMPERATURE, 4300)
+            
+            # For EV compensation (-2.5 EV), we might need to adjust exposure
+            # This is a workaround as OpenCV doesn't have direct EV control
+            current_exposure = self.capture.get(cv2.CAP_PROP_EXPOSURE)
+            if current_exposure > 0:
+                self.capture.set(cv2.CAP_PROP_EXPOSURE, current_exposure * (2 ** -2.5))
+            
+            # Enable auto exposure off for manual control (if supported)
+            self.capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 means manual mode
+            
+            # Enable manual white balance mode (if supported)
+            self.capture.set(cv2.CAP_PROP_AUTO_WB, 0)
+        except Exception as e:
+            print(f"Warning: Could not set all camera settings: {e}")
+
         time.sleep(0.5)
 
     def update_settings(self, source, resolution, fps):
