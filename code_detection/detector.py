@@ -129,6 +129,8 @@ class Detector:
                     [[startX, startY], [endX, startY], [endX, endY], [startX, endY]]
                 )
 
+                text_val.replace('"', '\"').replace("'", "\'")  # Escape quotes in text
+
                 # Check if the detected text is a keyword
                 # and if it is, transform the box to card coordinates
                 upper_text_val = text_val.upper()
@@ -136,9 +138,9 @@ class Detector:
                     corners = self.text_box_to_card(corners, aruco_corners)
                     if upper_text_val == "ELSEIF":
                         upper_text_val = "ELSE IF"
-                    boxes.append((corners, upper_text_val, "aruco", image_id))
+                    boxes.append((corners, str(upper_text_val), "aruco", image_id))
                 else:
-                    boxes.append((corners, text_val, "ocr", image_id))
+                    boxes.append((corners, str(text_val), "ocr", image_id))
 
         # Add detected ArUco boxes to list of boxes
         if ids is not None:
@@ -153,7 +155,7 @@ class Detector:
                     ]
                 )
                 text_val = get_keyword(ids[i][0])
-                boxes.append((box_corners, text_val, "aruco", image_id))
+                boxes.append((box_corners, str(text_val), "aruco", image_id))
 
         return boxes
 
@@ -247,7 +249,7 @@ class Detector:
         # Create a new box that encompasses all the boxes in the group
         merged_box = self.get_overall_box(boxes)
         # Create a new box with the merged label
-        merged_box = (merged_box, merged_label, "ocr", boxes[0][3])
+        merged_box = (merged_box, str(merged_label), "ocr", boxes[0][3])
         return merged_box
 
     def merge_ocr_group(self, group):
@@ -310,7 +312,7 @@ class Detector:
 
         # Create a new box with the most common label
         mean_box = np.mean([box[0] for box in filtered_boxes], axis=0)
-        combined_box = (mean_box, best_label)
+        combined_box = (mean_box, str(best_label))
 
         return combined_box
 
