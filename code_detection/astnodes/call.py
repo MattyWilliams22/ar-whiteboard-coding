@@ -14,7 +14,8 @@ class Call(Statement):
     def python_print(self):
         call = f"{self.function_name}("
 
-        call += self.arguments
+        if isinstance(self.arguments, str):
+            call += self.arguments
 
         call += ")"
 

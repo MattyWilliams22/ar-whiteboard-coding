@@ -116,6 +116,8 @@ class Executor:
         """Executes the code in a Docker sandbox"""
         # Combine the helper code and whiteboard code
         full_code = self._insert_whiteboard_code()
+        full_code.replace('\"', '"').replace("\'", "'")  # Ensure quotes are properly escaped
+
         self.output = None
         self.error_message = None
 

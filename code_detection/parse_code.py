@@ -2,6 +2,7 @@ from collections import deque
 import numpy as np
 from typing import List, Tuple
 from code_detection.astnodes import *
+import traceback
 
 
 def get_overall_bounds(bounds: List[List[Tuple[int, int]]]):
@@ -82,6 +83,9 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
                 args += next + " "
                 function_bounds = get_overall_bounds([function_bounds, next_bounds])
                 next, next_bounds = tokens.popleft()
+        else:
+            tokens.appendleft((next, next_bounds))
+            args = ""
 
         next, next_bounds = tokens.popleft()
         function_bounds = get_overall_bounds([function_bounds, next_bounds])
@@ -109,6 +113,7 @@ def parse_function(tokens: deque, function_bounds: List[Tuple[int, int]]):
         print("Parsed function ", function.python_print())
         return function, tokens, function_bounds, None
     except Exception as e:
+        traceback.print_exc()
         return None, tokens, function_bounds, str(e)
 
 
@@ -238,6 +243,8 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
             next, next_bounds = tokens.popleft()
 
         if next == "CALL":
+            if not token.endswith("="):
+                token += " ="
             call_stmt, tokens, call_bounds, err = parse_call(tokens, statement_bounds)
             if err:
                 raise Exception(err)
@@ -246,6 +253,8 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
             print("Parsed assign call statement ", stmt.python_print())
             return stmt, tokens, statement_bounds, None
         if next == "CLASS":
+            if not token.endswith("="):
+                token += " ="
             class_name, class_bounds = tokens.popleft()
             statement_bounds = get_overall_bounds([statement_bounds, class_bounds])
             next, next_bounds = tokens.popleft()
@@ -277,6 +286,7 @@ def parse_custom_statement(tokens: deque, token, statement_bounds):
         print("Parsed custom statement ", stmt.python_print())
         return stmt, tokens, statement_bounds, None
     except Exception as e:
+        traceback.print_exc()
         return None, tokens, statement_bounds, str(e)
 
 
@@ -378,11 +388,12 @@ def parse_call(tokens: deque, call_bounds):
         stmt = Call(
             call_bounds,
             func_name,
-            args.strip(),
+            str(args.strip()),
         )
         print("Parsed call statement ", stmt.python_print())
         return stmt, tokens, call_bounds, None
     except Exception as e:
+        traceback.print_exc()
         return None, tokens, call_bounds, str(e)
 
 
@@ -520,6 +531,9 @@ def parse_class(tokens: deque, class_bounds):
                 inherits += next + " "
                 class_bounds = get_overall_bounds([class_bounds, next_bounds])
                 next, next_bounds = tokens.popleft()
+        else:
+            tokens.appendleft((next, next_bounds))
+            inherits = ""
 
         suite, tokens, suite_bounds, err = parse_suite(tokens, ["END"])
         if err:
@@ -542,6 +556,7 @@ def parse_class(tokens: deque, class_bounds):
         print("Parsed class ", class_node.python_print())
         return class_node, tokens, class_bounds, None
     except Exception as e:
+        traceback.print_exc()
         return None, tokens, class_bounds, str(e)
 
 
