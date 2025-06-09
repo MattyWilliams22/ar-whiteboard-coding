@@ -1,6 +1,6 @@
 def greet(name):
     print("Hello, ")
-    print(name)
+    print(str(name))
 
 greet("Angelo")
 greet("Maria")

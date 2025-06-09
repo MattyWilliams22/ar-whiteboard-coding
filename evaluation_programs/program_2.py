@@ -1,4 +1,4 @@
-for i in range(5):
+for i in range(1, 5):
     print("Number is:")
     print(str(i))
     if i % 2 == 0:

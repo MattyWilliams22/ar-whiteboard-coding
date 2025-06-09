@@ -3,13 +3,10 @@ def hcf(x, y):
         smaller = y
     else:
         smaller = x
-
     for i in range(1, smaller + 1):
         if (x % i == 0) and (y % i == 0):
             hcf = i
-
     return hcf
-
 z = hcf(54, 24)
 print("HCF is:")
 print(str(z))
