@@ -116,7 +116,7 @@ class Executor:
         """Executes the code in a Docker sandbox"""
         # Combine the helper code and whiteboard code
         full_code = self._insert_whiteboard_code()
-        full_code.replace('\"', '"').replace("\'", "'")  # Ensure quotes are properly escaped
+        full_code = full_code.replace('\"', '"').replace("\'", "'")
 
         self.output = None
         self.error_message = None
@@ -142,17 +142,16 @@ class Executor:
                     "--rm",
                     "--name",
                     container_name,
-                    "--network",
-                    "none",  # no internet
-                    "--cpus",
-                    "0.5",  # cpu limit
-                    "--memory",
-                    "128m",  # memory limit
-                    "-v",
-                    f"{temp_dir}:/code",
+                    "--network", "none",  # no internet
+                    "--cpus", "0.5",  # cpu limit
+                    "--memory", "128m",  # memory limit
+                    "--read-only",
+                    "--security-opt", "no-new-privileges",
+                    "--pids-limit", "50",
+                    "--cap-drop", "ALL",
+                    "-v", f"{temp_dir}:/code:ro",
                     DOCKER_IMAGE,
-                    "timeout",
-                    str(TIMEOUT_SECONDS),
+                    "timeout", str(TIMEOUT_SECONDS),
                     "python3",
                     "/code/script.py",
                 ],

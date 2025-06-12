@@ -34,10 +34,10 @@ class Tokeniser:
                 point[1] for point in coordinates
             )
 
-            # Calculate the vertical center of the bounding box
+            # Calculate the vertical centre of the bounding box
             top_y = min(point[1] for point in coordinates)
             bottom_y = max(point[1] for point in coordinates)
-            center_y = (top_y + bottom_y) / 2  # Vertical center
+            centre_y = (top_y + bottom_y) / 2  # Vertical centre
 
             # Calculate the dynamic line threshold
             line_threshold = height * self.scale_factor
@@ -45,7 +45,7 @@ class Tokeniser:
             # Find the most appropriate line for the current box
             best_line = None
             for i, line in enumerate(lines):
-                line_center_y = np.mean(
+                line_centre_y = np.mean(
                     [
                         (
                             (min(pt[1] for pt in box[1]) + max(pt[1] for pt in box[1]))
@@ -54,7 +54,7 @@ class Tokeniser:
                         for box in line
                     ]
                 )
-                if abs(center_y - line_center_y) <= line_threshold:
+                if abs(centre_y - line_centre_y) <= line_threshold:
                     best_line = line
                     break
 
@@ -130,7 +130,7 @@ class Tokeniser:
 
         for token in self.tokens:
             if token[0] == "LineBreak":
-                # When we encounter the "LineBreak" token, we finalize the current line and add it to the result.
+                # When we encounter the "LineBreak" token, we finalise the current line and add it to the result.
                 if line_tokens:
                     result.append(" ".join(line_tokens))
                     line_tokens = []  # Reset for the next line

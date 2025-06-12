@@ -34,7 +34,7 @@ class SettingsMenu:
         master.minsize(600, 500)
         master.maxsize(800, 700)
 
-        # Initialize device lists
+        # Initialise device lists
         self.cameras = []
         self.microphones = []
 
@@ -248,7 +248,7 @@ class SettingsMenu:
 
         row = 0
 
-        # Camera device dropdown (initialize empty)
+        # Camera device dropdown (initialise empty)
         ttk.Label(main_frame, text="Camera:").grid(
             row=row, column=0, sticky="w", pady=2
         )
@@ -261,7 +261,7 @@ class SettingsMenu:
         )
         row += 1
 
-        # Camera resolution (initialize empty)
+        # Camera resolution (initialise empty)
         ttk.Label(main_frame, text="Camera Resolution:").grid(
             row=row, column=0, sticky="w", pady=2
         )

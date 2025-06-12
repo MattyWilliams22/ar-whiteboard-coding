@@ -151,8 +151,8 @@ def draw_aruco_keywords(image, bboxs, ids):
         box = bboxs[i][0]
 
         # Calculate the centre of the marker
-        center_x = int((box[0][0] + box[2][0]) / 2)
-        center_y = int((box[0][1] + box[2][1]) / 2)
+        centre_x = int((box[0][0] + box[2][0]) / 2)
+        centre_y = int((box[0][1] + box[2][1]) / 2)
 
         # Calculate the direction vector (from top-left to top-right)
         dir_x = box[1][0] - box[0][0]
@@ -165,14 +165,14 @@ def draw_aruco_keywords(image, bboxs, ids):
 
         # Calculate the position for the text (to the right of the marker)
         offset = 70  # Distance to place the text away from the marker
-        text_x = int(center_x + dir_x * offset)
-        text_y = int(center_y + dir_y * offset)
+        text_x = int(centre_x + dir_x * offset)
+        text_y = int(centre_y + dir_y * offset)
 
         # Ensure the text is not too close to the marker
         if text_x < 0:
-            text_x = center_x + 80  # If calculated text position is out of bounds
+            text_x = centre_x + 80  # If calculated text position is out of bounds
         if text_y < 0:
-            text_y = center_y + 80
+            text_y = centre_y + 80
 
         # Draw the corresponding keyword to the right of the marker
         text = get_keyword(ids[i][0])

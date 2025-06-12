@@ -129,7 +129,7 @@ class Detector:
                     [[startX, startY], [endX, startY], [endX, endY], [startX, endY]]
                 )
 
-                text_val.replace('"', '"').replace("'", "'")  # Escape quotes in text
+                text_val = text_val.replace('"', '\"').replace("'", "\'")
 
                 # Check if the detected text is a keyword
                 # and if it is, transform the box to card coordinates
@@ -163,7 +163,7 @@ class Detector:
         return boxes
 
     def group_boxes_by_overlap(self, boxes):
-        # Initialize each box as its own group
+        # Initialise each box as its own group
         parents = [i for i in range(len(boxes))]
 
         def find(u):

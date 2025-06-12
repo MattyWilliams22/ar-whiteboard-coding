@@ -13,18 +13,8 @@ class Parser:
         self.error_box = None
 
     def normalise_python_code(self, ocr_code: str) -> str:
-        """
-        Normalises Python code from OCR output by:
-        1. Converting Unicode homoglyphs to ASCII equivalents
-        2. Preserving indentation and line structure
-        3. Fixing common OCR errors in Python syntax
-
-        Args:
-            ocr_code: Raw string output from OCR
-
-        Returns:
-            Normalised Python code safe for exec()
-        """
+        """Normalise Python code extracted from OCR text."""
+        
         # Homoglyph mapping (Unicode → ASCII)
         HOMOGLYPHS = {
             # Common OCR mistakes in code

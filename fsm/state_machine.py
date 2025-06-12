@@ -6,10 +6,10 @@ class SystemFSM:
     def __init__(self):
         self.state = SystemState.IDLE
         self.lock = Lock()
-        self._initialize_transitions()
+        self._initialise_transitions()
 
-    def _initialize_transitions(self):
-        """Initialize the state transitions for the FSM."""
+    def _initialise_transitions(self):
+        """Initialise the state transitions for the FSM."""
         self.transitions = {
             SystemState.IDLE: {
                 Event.START_RUN: SystemState.RUNNING,

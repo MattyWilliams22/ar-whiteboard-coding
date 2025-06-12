@@ -296,7 +296,7 @@ class Projector:
             py_start_x = py_min_x
             py_start_y = py_max_y  # starts just below the Python marker
 
-            # Initialize Python box to extend to image boundaries
+            # Initialise Python box to extend to image boundaries
             py_box = [
                 [py_start_x, py_start_y],
                 [image_max_x, py_start_y],
@@ -323,7 +323,7 @@ class Projector:
             out_start_x = out_min_x
             out_start_y = out_max_y  # starts just below the Output marker
 
-            # Initialize Output box to extend to image boundaries
+            # Initialise Output box to extend to image boundaries
             out_box = [
                 [out_start_x, out_start_y],
                 [image_max_x, out_start_y],

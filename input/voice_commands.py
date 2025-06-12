@@ -23,7 +23,7 @@ class VoiceCommandThread(threading.Thread):
         self._running = threading.Event()
         self._stop_flag = threading.Event()
 
-        # Initialize speech recognizer
+        # Initialise speech recogniser
         self.recognizer = sr.Recognizer()
         self.recognizer.dynamic_energy_threshold = False
         self.recognizer.energy_threshold = 400
@@ -76,10 +76,10 @@ class VoiceCommandThread(threading.Thread):
                 frames_per_buffer=self.porcupine.frame_length,
             )
             print(
-                f"Initialized microphone: {self.pa.get_device_info_by_index(self.settings['MICROPHONE'])['name']}"
+                f"Initialised microphone: {self.pa.get_device_info_by_index(self.settings['MICROPHONE'])['name']}"
             )
         except Exception as e:
-            print(f"Failed to initialize audio: {e}")
+            print(f"Failed to initialise audio: {e}")
             raise
 
     def _process_command(self, command):
@@ -133,7 +133,7 @@ class VoiceCommandThread(threading.Thread):
 
                         try:
                             command = self.recognizer.recognize_google(audio)
-                            print(f"Recognized command: {command}")
+                            print(f"Recognised command: {command}")
                             event = self._process_command(command)
                             if event:
                                 self.fsm.transition(event)
